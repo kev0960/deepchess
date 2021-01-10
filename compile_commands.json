@@ -1,0 +1,47 @@
+[
+{
+  "directory": "/home/jblee/deepchess/build",
+  "command": "/usr/bin/c++ -DFMT_LOCALE -I_deps/fmtlib-src/include -std=gnu++11 -o _deps/fmtlib-build/CMakeFiles/fmt.dir/src/format.cc.o -c /home/jblee/deepchess/build/_deps/fmtlib-src/src/format.cc",
+  "file": "/home/jblee/deepchess/build/_deps/fmtlib-src/src/format.cc"
+},
+{
+  "directory": "/home/jblee/deepchess/build",
+  "command": "/usr/bin/c++ -DFMT_LOCALE -I_deps/fmtlib-src/include -std=gnu++11 -o _deps/fmtlib-build/CMakeFiles/fmt.dir/src/os.cc.o -c /home/jblee/deepchess/build/_deps/fmtlib-src/src/os.cc",
+  "file": "/home/jblee/deepchess/build/_deps/fmtlib-src/src/os.cc"
+},
+{
+  "directory": "/home/jblee/deepchess/build",
+  "command": "/usr/bin/c++ -DFMT_LOCALE -I../src/. -I_deps/fmtlib-src/include -I_deps/json-src/include -Wall -Wextra -pedantic -Werror -std=gnu++17 -o src/CMakeFiles/libdeepchess.dir/board.cc.o -c /home/jblee/deepchess/src/board.cc",
+  "file": "/home/jblee/deepchess/src/board.cc"
+},
+{
+  "directory": "/home/jblee/deepchess/build",
+  "command": "/usr/bin/c++ -DFMT_LOCALE -I../src/. -I_deps/fmtlib-src/include -I_deps/json-src/include -std=gnu++17 -o app/CMakeFiles/chess.dir/main.cc.o -c /home/jblee/deepchess/app/main.cc",
+  "file": "/home/jblee/deepchess/app/main.cc"
+},
+{
+  "directory": "/home/jblee/deepchess/build",
+  "command": "/usr/bin/c++ -DFMT_LOCALE -I../src/. -I_deps/fmtlib-src/include -I_deps/json-src/include -isystem _deps/googletest-src/googletest/include -isystem _deps/googletest-src/googletest -isystem _deps/googletest-src/googlemock/include -isystem _deps/googletest-src/googlemock -std=gnu++17 -o tests/CMakeFiles/chesstest.dir/board_test.cc.o -c /home/jblee/deepchess/tests/board_test.cc",
+  "file": "/home/jblee/deepchess/tests/board_test.cc"
+},
+{
+  "directory": "/home/jblee/deepchess/build",
+  "command": "/usr/bin/c++ -isystem _deps/googletest-src/googlemock/include -isystem _deps/googletest-src/googlemock -isystem _deps/googletest-src/googletest/include -isystem _deps/googletest-src/googletest -Wall -Wshadow -Werror -Wno-error=dangling-else -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -std=c++11 -o _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o -c /home/jblee/deepchess/build/_deps/googletest-src/googlemock/src/gmock_main.cc",
+  "file": "/home/jblee/deepchess/build/_deps/googletest-src/googlemock/src/gmock_main.cc"
+},
+{
+  "directory": "/home/jblee/deepchess/build",
+  "command": "/usr/bin/c++ -I_deps/googletest-src/googlemock/include -I_deps/googletest-src/googlemock -isystem _deps/googletest-src/googletest/include -isystem _deps/googletest-src/googletest -Wall -Wshadow -Werror -Wno-error=dangling-else -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -std=c++11 -o _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o -c /home/jblee/deepchess/build/_deps/googletest-src/googlemock/src/gmock-all.cc",
+  "file": "/home/jblee/deepchess/build/_deps/googletest-src/googlemock/src/gmock-all.cc"
+},
+{
+  "directory": "/home/jblee/deepchess/build",
+  "command": "/usr/bin/c++ -isystem _deps/googletest-src/googletest/include -isystem _deps/googletest-src/googletest -Wall -Wshadow -Werror -Wno-error=dangling-else -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -std=c++11 -o _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -c /home/jblee/deepchess/build/_deps/googletest-src/googletest/src/gtest_main.cc",
+  "file": "/home/jblee/deepchess/build/_deps/googletest-src/googletest/src/gtest_main.cc"
+},
+{
+  "directory": "/home/jblee/deepchess/build",
+  "command": "/usr/bin/c++ -I_deps/googletest-src/googletest/include -I_deps/googletest-src/googletest -Wall -Wshadow -Werror -Wno-error=dangling-else -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -std=c++11 -o _deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o -c /home/jblee/deepchess/build/_deps/googletest-src/googletest/src/gtest-all.cc",
+  "file": "/home/jblee/deepchess/build/_deps/googletest-src/googletest/src/gtest-all.cc"
+}
+]
