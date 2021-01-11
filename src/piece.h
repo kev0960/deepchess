@@ -13,6 +13,7 @@ class Piece {
  public:
   constexpr Piece(uint8_t info) : info_(info & 0b00001111) {}
   Piece(PieceType type, PieceSide side);
+  explicit Piece(std::string_view piece);
 
   constexpr PieceType Type() const {
     // The last 3 bits encodes the type of the piece.

@@ -1,6 +1,34 @@
 #include "board.h"
 
+#include <fmt/core.h>
+
 namespace chess {
+namespace {
+
+std::pair<int, int> ChessNotationToCoord(std::string_view notation) {
+  if (notation.size() != 2) {
+    return std::make_pair(0, 0);
+  }
+
+  int row = 7 - (notation[1] - '1');
+  int col = notation[0] - 'a';
+
+  return std::make_pair(row, col);
+}
+
+}  // namespace
+
+Board::Board(const std::vector<PiecesOnBoard>& pieces) {
+  board_.fill(0);
+
+  for (auto& [piece, pos] : pieces) {
+    for (std::string_view notation : pos) {
+      auto [row, col] = ChessNotationToCoord(notation);
+      fmt::print("{}, {} \n", row, col);
+      PutPieceAt(row, col, Piece(piece));
+    }
+  }
+}
 
 Piece Board::PieceAt(int row, int col) const {
   const int index = 4 * (8 * row + col) / 64;
@@ -37,7 +65,10 @@ void Board::PutPieceAt(int row, int col, Piece piece) {
   const int index = 4 * (8 * row + col) / 64;
   const int offset_in_board_elem = 4 * (8 * row + col) % 64;
 
+  fmt::print("Before {}, {} {:b}\n", index, offset_in_board_elem,
+             board_[index]);
   piece.MarkPiece(board_[index], offset_in_board_elem);
+  fmt::print("After {:0>64b}\n", board_[index]);
 }
 
 }  // namespace chess

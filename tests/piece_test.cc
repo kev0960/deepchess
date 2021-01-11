@@ -33,6 +33,10 @@ TEST_P(PieceParamTest, Print) {
   EXPECT_EQ(piece.Print(), piece_char);
   EXPECT_EQ(piece.Type(), type);
   EXPECT_EQ(piece.Side(), side);
+
+  Piece piece2(piece_char);
+  EXPECT_EQ(piece.Type(), type);
+  EXPECT_EQ(piece.Side(), side);
 }
 
 TEST(PieceTest, Mark) {
@@ -55,6 +59,9 @@ TEST(PieceTest, Mark) {
   Piece queen(QUEEN, BLACK);
   queen.MarkPiece(board, 16);
   EXPECT_EQ(board, 0b11011001000001001001);
+
+  queen.MarkPiece(board, 32);
+  EXPECT_EQ(board, 0b110100000000000011011001000001001001);
 }
 
 TEST(PieceTest, Constructor) {
