@@ -2,6 +2,8 @@
 
 #include <fmt/core.h>
 
+#include "piece_moves/pawn.h"
+
 namespace chess {
 namespace {
 
@@ -43,6 +45,13 @@ Piece Board::PieceAt(int row, int col) const {
 std::vector<Move> Board::GetAvailableMoves() const {
   std::vector<Move> moves;
 
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      std::vector<Move> piece_moves = GetMoveOfPieceAt(i, j);
+      moves.insert(moves.end(), piece_moves.begin(), piece_moves.end());
+    }
+  }
+
   return moves;
 }
 
@@ -65,6 +74,25 @@ void Board::PutPieceAt(int row, int col, Piece piece) {
   const int offset_in_board_elem = 4 * (8 * row + col) % 64;
 
   piece.MarkPiece(board_[index], offset_in_board_elem);
+}
+
+bool Board::IsEmptyAt(int row, int col) const {
+  return PieceAt(row, col).Type() == EMPTY;
+}
+
+std::vector<Move> Board::GetMoveOfPieceAt(int row, int col) const {
+  Piece piece = PieceAt(row, col);
+  switch (piece.Type()) {
+    case PAWN:
+      return PawnMove::GetMoves(*this, piece, row, col);
+    default:
+      return {};
+  }
+}
+
+std::vector<Move> Board::GetMoveOfPieceAt(std::string_view coord) const {
+  auto [row, col] = ChessNotationToCoord(coord);
+  return GetMoveOfPieceAt(row, col);
 }
 
 }  // namespace chess

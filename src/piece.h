@@ -24,6 +24,15 @@ class Piece {
     return (info_ & 0b1000) == 0 ? WHITE : BLACK;
   }
 
+  constexpr bool IsOpponent(PieceSide side) const {
+    // Empty cell is NEITHER opponent or ally.
+    if (Type() == EMPTY) {
+      return false;
+    }
+
+    return Side() != side;
+  }
+
   void MarkPiece(uint64_t& board, int offset) const;
 
   char Print() const;

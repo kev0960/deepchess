@@ -30,9 +30,14 @@ class Board {
   std::string PrintBoard() const;
   void PutPieceAt(int row, int col, Piece piece);
 
- private:
   Piece PieceAt(int row, int col) const;
+  bool IsEmptyAt(int row, int col) const;
 
+  // Find the available moves of the piece at given location.
+  std::vector<Move> GetMoveOfPieceAt(int row, int col) const;
+  std::vector<Move> GetMoveOfPieceAt(std::string_view coord) const;
+
+ private:
   // Presence of pieces on the board.
   std::array<uint64_t, 4> board_;
 };
