@@ -1,6 +1,7 @@
 #include "piece.h"
 
-#include "fmt/core.h"
+#include <fmt/core.h>
+
 namespace chess {
 
 Piece::Piece(PieceType type, PieceSide side) {
@@ -38,7 +39,7 @@ Piece::Piece(std::string_view piece) {
       break;
   }
 
-  info_ |= (static_cast<int>(type) | (static_cast<int>(std::islower(ch)) << 3));
+  info_ |= (static_cast<int>(type) | ((std::islower(ch) ? 1 : 0) << 3));
 }
 
 char Piece::Print() const {
@@ -66,9 +67,6 @@ void Piece::MarkPiece(uint64_t& board, int offset) const {
   // 11111 .... 1 0000 111 ... 111111
   //                   <-- offset -->
   const uint64_t clear_board = (-1) ^ (0b1111ll << offset);
-
-  fmt::print("offset {} {:0>64b} {:0>64b}\n", offset, clear_board,
-             uint64_t(0b1111ll << offset));
 
   // Scratch off the encoded region to 0.
   board &= clear_board;

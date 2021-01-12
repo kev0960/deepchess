@@ -24,7 +24,6 @@ Board::Board(const std::vector<PiecesOnBoard>& pieces) {
   for (auto& [piece, pos] : pieces) {
     for (std::string_view notation : pos) {
       auto [row, col] = ChessNotationToCoord(notation);
-      fmt::print("{}, {} \n", row, col);
       PutPieceAt(row, col, Piece(piece));
     }
   }
@@ -35,7 +34,7 @@ Piece Board::PieceAt(int row, int col) const {
   const int offset_in_board_elem = 4 * (8 * row + col) % 64;
 
   // Extract 4 bit information about the piece.
-  uint8_t info = (board_[index] & (0b1111 << offset_in_board_elem)) >>
+  uint8_t info = (board_[index] & (0b1111ll << offset_in_board_elem)) >>
                  offset_in_board_elem;
 
   return Piece(info);
@@ -65,10 +64,7 @@ void Board::PutPieceAt(int row, int col, Piece piece) {
   const int index = 4 * (8 * row + col) / 64;
   const int offset_in_board_elem = 4 * (8 * row + col) % 64;
 
-  fmt::print("Before {}, {} {:b}\n", index, offset_in_board_elem,
-             board_[index]);
   piece.MarkPiece(board_[index], offset_in_board_elem);
-  fmt::print("After {:0>64b}\n", board_[index]);
 }
 
 }  // namespace chess
