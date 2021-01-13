@@ -1,6 +1,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "piece_moves/pawn.h"
+#include "piece_moves/rook.h"
 
 namespace chess {
 namespace {
@@ -25,7 +26,7 @@ TEST_F(PieceMoveTest, PawnSimpleForward) {
   Board board(pieces);
 
   EXPECT_THAT(ConvertMovesToChessNotation(board.GetAvailableMoves()),
-              UnorderedElementsAre("a3"));
+              UnorderedElementsAre("a3", "a4"));
 }
 
 TEST_F(PieceMoveTest, PawnAtEdge) {
@@ -76,7 +77,7 @@ TEST_F(PieceMoveTest, PawnCapture) {
     Board board(pieces);
 
     EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("a2")),
-                UnorderedElementsAre("a3", "b3"));
+                UnorderedElementsAre("a3", "b3", "a4"));
 
     EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("b3")),
                 UnorderedElementsAre("a2", "b2"));
@@ -87,7 +88,7 @@ TEST_F(PieceMoveTest, PawnCapture) {
     Board board(pieces);
 
     EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("b2")),
-                UnorderedElementsAre("a3", "b3", "c3"));
+                UnorderedElementsAre("a3", "b3", "b4", "c3"));
 
     EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("a3")),
                 UnorderedElementsAre("b2", "a2"));
@@ -102,7 +103,7 @@ TEST_F(PieceMoveTest, PawnCapture) {
     Board board(pieces);
 
     EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("b2")),
-                UnorderedElementsAre("b3"));
+                UnorderedElementsAre("b3", "b4"));
 
     EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("a3")),
                 UnorderedElementsAre("a4"));
@@ -110,6 +111,145 @@ TEST_F(PieceMoveTest, PawnCapture) {
     EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("c3")),
                 UnorderedElementsAre("c4"));
   }
+}
+
+TEST_F(PieceMoveTest, RookSimple) {
+  std::vector<PiecesOnBoard> pieces = {{"R", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetAvailableMoves()),
+              UnorderedElementsAre("a4", "b4", "c4", "e4", "f4", "g4", "h4",
+                                   "d1", "d2", "d3", "d5", "d6", "d7", "d8"));
+}
+
+TEST_F(PieceMoveTest, RookEdge) {
+  std::vector<PiecesOnBoard> pieces = {{"R", {"a1"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetAvailableMoves()),
+              UnorderedElementsAre("a2", "a3", "a4", "a5", "a6", "a7", "a8",
+                                   "b1", "c1", "d1", "e1", "f1", "g1", "h1"));
+}
+
+TEST_F(PieceMoveTest, RookBlocked) {
+  std::vector<PiecesOnBoard> pieces = {
+      {"p", {"b4"}}, {"P", {"d7"}}, {"R", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("d4")),
+              UnorderedElementsAre("b4", "c4", "e4", "f4", "g4", "h4", "d1",
+                                   "d2", "d3", "d5", "d6"));
+}
+
+TEST_F(PieceMoveTest, BishopSimple) {
+  std::vector<PiecesOnBoard> pieces = {{"B", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetAvailableMoves()),
+              UnorderedElementsAre("c3", "b2", "a1", "e5", "f6", "g7", "h8",
+                                   "c5", "b6", "a7", "e3", "f2", "g1"));
+}
+
+TEST_F(PieceMoveTest, BishopEdge) {
+  std::vector<PiecesOnBoard> pieces = {{"B", {"a8"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetAvailableMoves()),
+              UnorderedElementsAre("b7", "c6", "d5", "e4", "f3", "g2", "h1"));
+}
+
+TEST_F(PieceMoveTest, BishopBlocked) {
+  std::vector<PiecesOnBoard> pieces = {
+      {"p", {"b6"}}, {"P", {"g7"}}, {"B", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("d4")),
+              UnorderedElementsAre("c3", "b2", "a1", "e5", "f6", "c5", "b6",
+                                   "e3", "f2", "g1"));
+}
+
+TEST_F(PieceMoveTest, QueenSimple) {
+  std::vector<PiecesOnBoard> pieces = {{"Q", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetAvailableMoves()),
+              UnorderedElementsAre("c3", "b2", "a1", "e5", "f6", "g7", "h8",
+                                   "c5", "b6", "a7", "e3", "f2", "g1", "a4",
+                                   "b4", "c4", "e4", "f4", "g4", "h4", "d1",
+                                   "d2", "d3", "d5", "d6", "d7", "d8"));
+}
+
+TEST_F(PieceMoveTest, QueenEdge) {
+  std::vector<PiecesOnBoard> pieces = {{"Q", {"a8"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetAvailableMoves()),
+              UnorderedElementsAre("b7", "c6", "d5", "e4", "f3", "g2", "h1",
+                                   "a2", "a3", "a4", "a5", "a6", "a7", "a1",
+                                   "b8", "c8", "d8", "e8", "f8", "g8", "h8"));
+}
+
+TEST_F(PieceMoveTest, QueenBlocked) {
+  std::vector<PiecesOnBoard> pieces = {
+      {"p", {"b6", "g4"}}, {"P", {"g7", "d7"}}, {"Q", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("d4")),
+              UnorderedElementsAre("c3", "b2", "a1", "e5", "f6", "c5", "b6",
+                                   "e3", "f2", "g1", "a4", "b4", "c4", "e4",
+                                   "f4", "g4", "d1", "d2", "d3", "d5", "d6"));
+}
+
+TEST_F(PieceMoveTest, KnightSimple) {
+  std::vector<PiecesOnBoard> pieces = {{"N", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(
+      ConvertMovesToChessNotation(board.GetAvailableMoves()),
+      UnorderedElementsAre("b5", "b3", "c2", "e2", "f3", "f5", "e6", "c6"));
+}
+
+TEST_F(PieceMoveTest, KnightEdge) {
+  std::vector<PiecesOnBoard> pieces = {{"N", {"a8"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetAvailableMoves()),
+              UnorderedElementsAre("c7", "b6"));
+}
+
+TEST_F(PieceMoveTest, KnightBlocked) {
+  std::vector<PiecesOnBoard> pieces = {
+      {"p", {"b3", "f5"}}, {"P", {"b5", "e2"}}, {"N", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("d4")),
+              UnorderedElementsAre("b3", "c2", "f3", "f5", "e6", "c6"));
+}
+
+TEST_F(PieceMoveTest, KingSimple) {
+  std::vector<PiecesOnBoard> pieces = {{"K", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(
+      ConvertMovesToChessNotation(board.GetAvailableMoves()),
+      UnorderedElementsAre("d3", "d5", "c3", "c4", "c5", "e3", "e4", "e5"));
+}
+
+TEST_F(PieceMoveTest, KingEdge) {
+  std::vector<PiecesOnBoard> pieces = {{"K", {"a8"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetAvailableMoves()),
+              UnorderedElementsAre("a7", "b7", "b8"));
+}
+
+TEST_F(PieceMoveTest, KingBlocked) {
+  std::vector<PiecesOnBoard> pieces = {
+      {"p", {"d3", "e4"}}, {"P", {"d5", "c4"}}, {"K", {"d4"}}};
+  Board board(pieces);
+
+  EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("d4")),
+              UnorderedElementsAre("d3", "c3", "c5", "e3", "e4", "e5"));
 }
 
 }  // namespace

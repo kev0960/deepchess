@@ -21,12 +21,25 @@ std::vector<Move> PawnMove::GetMoves(const Board& board, const Piece& piece,
   }
 
   // Can move diagonally when capturing the opponent piece.
-  if (col + 1 < 8 && board.PieceAt(next_row, col + 1).IsOpponent(piece.Side())) {
+  if (col + 1 < 8 &&
+      board.PieceAt(next_row, col + 1).IsOpponent(piece.Side())) {
     moves.push_back(Move(row, col, next_row, col + 1));
   }
 
-  if (col - 1 >= 0 && board.PieceAt(next_row, col - 1).IsOpponent(piece.Side())) {
+  if (col - 1 >= 0 &&
+      board.PieceAt(next_row, col - 1).IsOpponent(piece.Side())) {
     moves.push_back(Move(row, col, next_row, col - 1));
+  }
+
+  // Can move two steps if the pawn is at the starting position.
+  if (piece.Side() == WHITE && row == 6 && board.IsEmptyAt(4, col) &&
+      board.IsEmptyAt(5, col)) {
+    moves.push_back(Move(6, col, 4, col));
+  }
+
+  if (piece.Side() == BLACK && row == 1 && board.IsEmptyAt(3, col) &&
+      board.IsEmptyAt(2, col)) {
+    moves.push_back(Move(1, col, 3, col));
   }
 
   return moves;

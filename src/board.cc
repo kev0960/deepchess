@@ -2,7 +2,12 @@
 
 #include <fmt/core.h>
 
+#include "piece_moves/bishop.h"
 #include "piece_moves/pawn.h"
+#include "piece_moves/queen.h"
+#include "piece_moves/rook.h"
+#include "piece_moves/knight.h"
+#include "piece_moves/king.h"
 
 namespace chess {
 namespace {
@@ -85,6 +90,16 @@ std::vector<Move> Board::GetMoveOfPieceAt(int row, int col) const {
   switch (piece.Type()) {
     case PAWN:
       return PawnMove::GetMoves(*this, piece, row, col);
+    case ROOK:
+      return RookMove::GetMoves(*this, piece, row, col);
+    case KNIGHT:
+      return KnightMove::GetMoves(*this, piece, row, col);
+    case BISHOP:
+      return BishopMove::GetMoves(*this, piece, row, col);
+    case QUEEN:
+      return QueenMove::GetMoves(*this, piece, row, col);
+    case KING:
+      return KingMove::GetMoves(*this, piece, row, col);
     default:
       return {};
   }
