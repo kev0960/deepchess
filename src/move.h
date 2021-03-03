@@ -16,8 +16,17 @@ class Move {
   constexpr int From() const { return static_cast<char>(from_to_ >> 6); }
   constexpr int To() const { return static_cast<char>(from_to_ & 0b111111); }
 
-  std::string FromStr() const; 
+  constexpr std::pair<int, int> FromCoord() const {
+    return std::make_pair(From() / 8, From() % 8);
+  }
+
+  constexpr std::pair<int, int> ToCoord() const {
+    return std::make_pair(To() / 8, To() % 8);
+  }
+
+  std::string FromStr() const;
   std::string ToStr() const;
+  std::string Str() const;
 
  private:
   // [0 ~ 63][0 ~ 63]; The position on the board.

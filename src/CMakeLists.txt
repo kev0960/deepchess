@@ -16,7 +16,9 @@ target_link_libraries(libdeepchess
   fmt::fmt
   pthread
   nlohmann_json::nlohmann_json
-  stdc++fs)
+  stdc++fs
+  "${TORCH_LIBRARIES}"
+  )
 
 target_include_directories(libdeepchess PUBLIC .)
 target_compile_features(libdeepchess PUBLIC cxx_std_17)

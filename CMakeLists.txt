@@ -30,6 +30,9 @@ FetchContent_Declare(
   GIT_TAG v3.9.1)
 FetchContent_MakeAvailable(json)
 
+find_package(Torch REQUIRED PATHS ~/libtorch)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
 # The compiled library code is here
 add_subdirectory(src)
 

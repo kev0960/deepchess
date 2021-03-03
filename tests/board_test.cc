@@ -37,6 +37,9 @@ RNBQKBNR
 )";
 
   EXPECT_EQ(board.PrintBoard(), chess_board);
+  for (auto m : board.GetAvailableMoves()) {
+    fmt::print("{} \n", m.Str());
+  }
 }
 
 }  // namespace

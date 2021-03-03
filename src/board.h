@@ -21,6 +21,7 @@ struct PiecesOnBoard {
 // 3 bits --> Indicate the type of the piece.
 class Board {
  public:
+  Board(const Board& board) : board_(board.board_) {}
   Board(const std::vector<PiecesOnBoard>& pieces);
 
   // Get list of possible moves.
@@ -28,14 +29,22 @@ class Board {
 
   // Print the board.
   std::string PrintBoard() const;
+
+  // Put piece at specified coord.
   void PutPieceAt(int row, int col, Piece piece);
+  void PutPieceAt(std::pair<int, int> coord, Piece piece);
 
   Piece PieceAt(int row, int col) const;
+  Piece PieceAt(std::pair<int, int> coord) const;
+
   bool IsEmptyAt(int row, int col) const;
 
   // Find the available moves of the piece at given location.
   std::vector<Move> GetMoveOfPieceAt(int row, int col) const;
   std::vector<Move> GetMoveOfPieceAt(std::string_view coord) const;
+
+  // Do move specified in Move.
+  Board DoMove(Move m) const;
 
  private:
   // Presence of pieces on the board.

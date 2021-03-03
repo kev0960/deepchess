@@ -3,11 +3,11 @@
 #include <fmt/core.h>
 
 #include "piece_moves/bishop.h"
+#include "piece_moves/king.h"
+#include "piece_moves/knight.h"
 #include "piece_moves/pawn.h"
 #include "piece_moves/queen.h"
 #include "piece_moves/rook.h"
-#include "piece_moves/knight.h"
-#include "piece_moves/king.h"
 
 namespace chess {
 namespace {
@@ -47,6 +47,10 @@ Piece Board::PieceAt(int row, int col) const {
   return Piece(info);
 }
 
+Piece Board::PieceAt(std::pair<int, int> coord) const {
+  return PieceAt(coord.first, coord.second);
+}
+
 std::vector<Move> Board::GetAvailableMoves() const {
   std::vector<Move> moves;
 
@@ -81,6 +85,10 @@ void Board::PutPieceAt(int row, int col, Piece piece) {
   piece.MarkPiece(board_[index], offset_in_board_elem);
 }
 
+void Board::PutPieceAt(std::pair<int, int> coord, Piece piece) {
+  PutPieceAt(coord.first, coord.second, piece);
+}
+
 bool Board::IsEmptyAt(int row, int col) const {
   return PieceAt(row, col).Type() == EMPTY;
 }
@@ -108,6 +116,16 @@ std::vector<Move> Board::GetMoveOfPieceAt(int row, int col) const {
 std::vector<Move> Board::GetMoveOfPieceAt(std::string_view coord) const {
   auto [row, col] = ChessNotationToCoord(coord);
   return GetMoveOfPieceAt(row, col);
+}
+
+Board Board::DoMove(Move m) const {
+  Board next(*this);
+
+  // Mark as empty.
+  next.PutPieceAt(m.ToCoord(), PieceAt(m.FromCoord()));
+  next.PutPieceAt(m.FromCoord(), Piece(" "));
+
+  return next;
 }
 
 }  // namespace chess

@@ -18,8 +18,8 @@ std::string Move::FromStr() const {
   return CoordToString(From() / 8, From() % 8);
 }
 
-std::string Move::ToStr() const {
-  return CoordToString(To() / 8, To() % 8);
-}
+std::string Move::ToStr() const { return CoordToString(To() / 8, To() % 8); }
+
+std::string Move::Str() const { return FromStr() + "->" + ToStr(); }
 
 }  // namespace chess
