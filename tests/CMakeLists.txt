@@ -12,7 +12,11 @@ set(BUILD_GTEST ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Add test cpp file
-add_executable(chesstest board_test.cc piece_test.cc piece_move_test.cc)
+file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/*.cc
+)
+
+add_executable(chesstest ${SRC_FILES})
 
 # Link test executable against gtest & gtest_main
 target_link_libraries(chesstest libdeepchess gtest gmock gtest_main fmt::fmt)

@@ -46,6 +46,12 @@ class Board {
   // Do move specified in Move.
   Board DoMove(Move m) const;
 
+  // Get every available move of certain side. This is useful when checking
+  // castling conditions. Returns the binary 8 * 8 board (64 bits).
+  uint64_t GetBinaryAvailableMoveOf(PieceSide side) const;
+
+  uint64_t GetBinaryPositionOfAll() const;
+
  private:
   // Presence of pieces on the board.
   std::array<uint64_t, 4> board_;

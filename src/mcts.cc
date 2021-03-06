@@ -65,7 +65,7 @@ void MCTS::Expand(MCTSNode* node) {
 }
 
 float MCTS::Evaluate(const MCTSNode* node) {
-  return evaluator_->Evalulate(node->State());
+  return evaluator_->Evalulate(node->State(), nullptr);
 }
 
 void MCTS::Backup(MCTSNode* leaf_node, float q) {

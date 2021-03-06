@@ -2,6 +2,7 @@
 
 #include <fmt/core.h>
 
+#include "bit_util.h"
 #include "piece_moves/bishop.h"
 #include "piece_moves/king.h"
 #include "piece_moves/knight.h"
@@ -126,6 +127,41 @@ Board Board::DoMove(Move m) const {
   next.PutPieceAt(m.FromCoord(), Piece(" "));
 
   return next;
+}
+
+uint64_t Board::GetBinaryAvailableMoveOf(PieceSide side) const {
+  uint64_t binary_board = 0;
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      Piece piece = PieceAt(row, col);
+
+      if (piece.Side() != side) {
+        continue;
+      }
+
+      auto moves = GetMoveOfPieceAt(row, col);
+      for (auto m : moves) {
+        binary_board = OnBitAt(binary_board, m.To());
+      }
+    }
+  }
+
+  return binary_board;
+}
+
+uint64_t Board::GetBinaryPositionOfAll() const {
+  uint64_t binary_board = 0;
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      Piece piece = PieceAt(row, col);
+      if (piece.Type() != PieceType::EMPTY) {
+        continue;
+      }
+      binary_board = OnBitAt(binary_board, row * 8 + col);
+    }
+  }
+
+  return binary_board;
 }
 
 }  // namespace chess
