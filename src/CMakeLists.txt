@@ -18,6 +18,7 @@ target_link_libraries(libdeepchess
   nlohmann_json::nlohmann_json
   stdc++fs
   "${TORCH_LIBRARIES}"
+  absl::strings
   )
 
 target_include_directories(libdeepchess PUBLIC .)

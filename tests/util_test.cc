@@ -1,6 +1,7 @@
 #include "bit_util.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "test_utils.h"
 
 namespace chess {
 namespace {
@@ -28,6 +29,23 @@ TEST(BitTest, OnBitAt) {
 
   bit = OffBitAt(bit, 7);
   EXPECT_EQ(bit, 0);
+}
+
+TEST(BoardFromNotationTest, Check) {
+  Board b = BoardFromNotation(R"(
+rnbqkbnr
+pppppppp
+
+
+
+
+PPPPPPPP
+RNBQKBNR
+)");
+
+  EXPECT_EQ(b.PrintBoard(),
+            "rnbqkbnr\npppppppp\n        \n        \n        \n        "
+            "\nPPPPPPPP\nRNBQKBNR\n");
 }
 
 }  // namespace

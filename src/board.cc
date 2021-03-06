@@ -26,6 +26,8 @@ std::pair<int, int> ChessNotationToCoord(std::string_view notation) {
 
 }  // namespace
 
+Board::Board() { board_.fill(0); }
+
 Board::Board(const std::vector<PiecesOnBoard>& pieces) {
   board_.fill(0);
 
@@ -142,6 +144,7 @@ uint64_t Board::GetBinaryAvailableMoveOf(PieceSide side) const {
       auto moves = GetMoveOfPieceAt(row, col);
       for (auto m : moves) {
         binary_board = OnBitAt(binary_board, m.To());
+        fmt::print("{} {} \n", piece.Print(), m.ToStr());
       }
     }
   }
@@ -154,7 +157,7 @@ uint64_t Board::GetBinaryPositionOfAll() const {
   for (int row = 0; row < 8; row++) {
     for (int col = 0; col < 8; col++) {
       Piece piece = PieceAt(row, col);
-      if (piece.Type() != PieceType::EMPTY) {
+      if (piece.Type() == PieceType::EMPTY) {
         continue;
       }
       binary_board = OnBitAt(binary_board, row * 8 + col);

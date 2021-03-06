@@ -19,4 +19,5 @@ file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
 add_executable(chesstest ${SRC_FILES})
 
 # Link test executable against gtest & gtest_main
-target_link_libraries(chesstest libdeepchess gtest gmock gtest_main fmt::fmt)
+target_link_libraries(chesstest libdeepchess gtest gmock gtest_main 
+  fmt::fmt absl::strings)

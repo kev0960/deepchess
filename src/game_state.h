@@ -17,6 +17,7 @@ class GameState {
  public:
   // Create the init game state.
   static GameState CreateInitGameState();
+  static GameState CreateGameStateForTesting(const Board& board);
 
   GameState(const GameState* prev_state, Move move);
 

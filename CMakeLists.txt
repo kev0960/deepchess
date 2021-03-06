@@ -33,6 +33,13 @@ FetchContent_MakeAvailable(json)
 find_package(Torch REQUIRED PATHS ~/libtorch)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
+# Need to fix abseil linking error: Check
+# https://github.com/abseil/abseil-cpp/issues/218
+set(CMAKE_CXX_STANDARD 17)
+
+# For abseil library
+add_subdirectory(abseil-cpp)
+
 # The compiled library code is here
 add_subdirectory(src)
 

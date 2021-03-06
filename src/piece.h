@@ -12,7 +12,9 @@ enum PieceSide { WHITE = 0, BLACK };
 class Piece {
  public:
   constexpr Piece(uint8_t info) : info_(info & 0b00001111) {}
-  Piece(PieceType type, PieceSide side);
+  constexpr Piece(PieceType type, PieceSide side)
+      : info_(static_cast<int>(type) | (static_cast<int>(side) << 3)) {}
+
   explicit Piece(std::string_view piece);
 
   constexpr PieceType Type() const {
@@ -31,6 +33,14 @@ class Piece {
     }
 
     return Side() != side;
+  }
+
+  constexpr bool operator==(const Piece& piece) const {
+    return info_ == piece.info_;
+  }
+
+  constexpr bool operator!=(const Piece& piece) const {
+    return info_ != piece.info_;
   }
 
   void MarkPiece(uint64_t& board, int offset) const;

@@ -4,11 +4,6 @@
 
 namespace chess {
 
-Piece::Piece(PieceType type, PieceSide side) {
-  info_ = 0;
-  info_ |= (static_cast<int>(type) | (static_cast<int>(side) << 3));
-}
-
 Piece::Piece(std::string_view piece) {
   char ch = piece[0];
 

@@ -1,19 +1,29 @@
 #include "game_state.h"
 
+#include <fmt/core.h>
+
+#include "bit_util.h"
+
 namespace chess {
+namespace {
 
 // Make sure that the king and the squares that the king passes is not under
 // attack.
-constexpr uint64_t kWhiteKingSideCastleAttackCheck = 0x70LL << 56;
-constexpr uint64_t kWhiteQueenSideCastleAttackCheck = 0x1CLL << 56;
+constexpr uint64_t kWhiteKingSideCastleAttackCheck = 0x70ULL << 56;
+constexpr uint64_t kWhiteQueenSideCastleAttackCheck = 0x1CULL << 56;
 constexpr uint64_t kBlackKingSideCastleAttackCheck = 0x70;
-constexpr uint64_t kBlackQueenSideCastleAttackCheck = 0x1C;
+constexpr uint64_t kBlackQueenSideCastleAttackCheck = 0x1E;
 
 // Make sure that there is no obstacle between the rook and the king.
-constexpr uint64_t kWhiteKingSideCastleMoveCheck = 0x60LL << 56;
-constexpr uint64_t kWhiteQueenSideCastleMoveCheck = 0xCLL << 56;
+constexpr uint64_t kWhiteKingSideCastleMoveCheck = 0x60ULL << 56;
+constexpr uint64_t kWhiteQueenSideCastleMoveCheck = 0xCULL << 56;
 constexpr uint64_t kBlackKingSideCastleMoveCheck = 0x60;
-constexpr uint64_t kBlackQueenSideCastleMoveCheck = 0xC;
+constexpr uint64_t kBlackQueenSideCastleMoveCheck = 0xE;
+
+static Piece kWhiteRook(PieceType::ROOK, PieceSide::WHITE);
+static Piece kBlackRook(PieceType::ROOK, PieceSide::BLACK);
+
+}  // namespace
 
 GameState::GameState(const Board& board)
     : current_board_(board), prev_state_(nullptr) {}
@@ -47,6 +57,14 @@ std::pair<bool, bool> GameState::CanWhiteCastle() const {
 
   bool can_castle_king_side = true, can_castle_queen_side = true;
 
+  if (current_board_.PieceAt(7, 0) != kWhiteRook) {
+    can_castle_queen_side = false;
+  }
+
+  if (current_board_.PieceAt(7, 7) != kWhiteRook) {
+    can_castle_king_side = false;
+  }
+
   if (white_castle_.king_side_rook_moved) {
     can_castle_king_side = false;
   } else if (white_castle_.queen_side_rook_moved) {
@@ -62,11 +80,13 @@ std::pair<bool, bool> GameState::CanWhiteCastle() const {
   uint64_t black_can_attack =
       current_board_.GetBinaryAvailableMoveOf(PieceSide::BLACK);
   if (can_castle_king_side) {
-    can_castle_king_side = kWhiteKingSideCastleAttackCheck & black_can_attack;
+    can_castle_king_side =
+        !(kWhiteKingSideCastleAttackCheck & black_can_attack);
   }
 
   if (can_castle_queen_side) {
-    can_castle_queen_side = kWhiteQueenSideCastleAttackCheck & black_can_attack;
+    can_castle_queen_side =
+        !(kWhiteQueenSideCastleAttackCheck & black_can_attack);
   }
 
   if (!can_castle_king_side && !can_castle_queen_side) {
@@ -76,11 +96,11 @@ std::pair<bool, bool> GameState::CanWhiteCastle() const {
   // Now check whether there are any obstacle between king and the rook.
   uint64_t current_pieces = current_board_.GetBinaryPositionOfAll();
   if (can_castle_king_side) {
-    can_castle_king_side = kWhiteKingSideCastleMoveCheck & current_pieces;
+    can_castle_king_side = !(kWhiteKingSideCastleMoveCheck & current_pieces);
   }
 
   if (can_castle_queen_side) {
-    can_castle_queen_side = kWhiteQueenSideCastleMoveCheck & current_pieces;
+    can_castle_queen_side = !(kWhiteQueenSideCastleMoveCheck & current_pieces);
   }
 
   return std::make_pair(can_castle_king_side, can_castle_queen_side);
@@ -92,6 +112,14 @@ std::pair<bool, bool> GameState::CanBlackCastle() const {
   }
 
   bool can_castle_king_side = true, can_castle_queen_side = true;
+
+  if (current_board_.PieceAt(0, 0) != kBlackRook) {
+    can_castle_queen_side = false;
+  }
+
+  if (current_board_.PieceAt(0, 7) != kBlackRook) {
+    can_castle_king_side = false;
+  }
 
   if (black_castle_.king_side_rook_moved) {
     can_castle_king_side = false;
@@ -108,11 +136,13 @@ std::pair<bool, bool> GameState::CanBlackCastle() const {
   uint64_t white_can_attack =
       current_board_.GetBinaryAvailableMoveOf(PieceSide::WHITE);
   if (can_castle_king_side) {
-    can_castle_king_side = kBlackKingSideCastleAttackCheck & white_can_attack;
+    can_castle_king_side =
+        !(kBlackKingSideCastleAttackCheck & white_can_attack);
   }
 
   if (can_castle_queen_side) {
-    can_castle_queen_side = kBlackQueenSideCastleAttackCheck & white_can_attack;
+    can_castle_queen_side =
+        !(kBlackQueenSideCastleAttackCheck & white_can_attack);
   }
 
   if (!can_castle_king_side && !can_castle_queen_side) {
@@ -122,11 +152,11 @@ std::pair<bool, bool> GameState::CanBlackCastle() const {
   // Now check whether there are any obstacle between king and the rook.
   uint64_t current_pieces = current_board_.GetBinaryPositionOfAll();
   if (can_castle_king_side) {
-    can_castle_king_side = kBlackKingSideCastleMoveCheck & current_pieces;
+    can_castle_king_side = !(kBlackKingSideCastleMoveCheck & current_pieces);
   }
 
   if (can_castle_queen_side) {
-    can_castle_queen_side = kBlackQueenSideCastleMoveCheck & current_pieces;
+    can_castle_queen_side = !(kBlackQueenSideCastleMoveCheck & current_pieces);
   }
 
   return std::make_pair(can_castle_king_side, can_castle_queen_side);
@@ -149,6 +179,11 @@ GameState GameState::CreateInitGameState() {
   };
 
   GameState state(Board{pieces});
+  return state;
+}
+
+GameState GameState::CreateGameStateForTesting(const Board& board) {
+  GameState state(board);
   return state;
 }
 
