@@ -1,7 +1,14 @@
 #include "test_utils.h"
+
 #include <fmt/core.h>
 
 namespace chess {
+
+GameStateBuilder& GameStateBuilder::DoMove(Move move) {
+  states_.push_back(std::make_unique<GameState>(states_.back().get(), move));
+
+  return *this;
+}
 
 Board BoardFromNotation(std::string_view notation) {
   Board board;

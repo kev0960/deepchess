@@ -2,9 +2,10 @@
 
 namespace chess {
 
-MCTS::MCTS(const Board& board, Evaluator* evaluator) : evaluator_(evaluator) {
+MCTS::MCTS(const GameState& state, Evaluator* evaluator)
+    : evaluator_(evaluator) {
   nodes_.push_back(
-      std::make_unique<MCTSNode>(board, /*parent=*/nullptr, /*prior=*/1));
+      std::make_unique<MCTSNode>(state, /*parent=*/nullptr, /*prior=*/1));
 
   root_ = nodes_.back().get();
 }
@@ -54,12 +55,12 @@ MCTSNode* MCTS::Select() {
 
 void MCTS::Expand(MCTSNode* node) {
   // Expand the node by adding the child (node, actions).
-  const Board& board = node->State();
+  const GameState& state = node->State();
+  const Board& board = state.GetBoard();
 
   std::vector<Move> possible_moves = board.GetAvailableMoves();
   for (const Move& move : possible_moves) {
-    nodes_.push_back(
-        std::make_unique<MCTSNode>(board.DoMove(move), node, /*prior=*/1));
+    nodes_.push_back(std::make_unique<MCTSNode>(state, node, /*prior=*/1));
     node->AddChildNode(nodes_.back().get(), move);
   }
 }

@@ -4,9 +4,9 @@
 
 namespace chess {
 
-float Evaluator::Evalulate(const Board& board, ChessNN* chess_net) {
+float Evaluator::Evalulate(const GameState& state, ChessNN* chess_net) {
   // Convert board to the state.
-  (void)board;
+  (void)state;
   (void)chess_net;
 
   return 0;

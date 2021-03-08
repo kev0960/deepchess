@@ -5,12 +5,12 @@
 
 #include <vector>
 
-#include "board.h"
+#include "game_state.h"
 
 namespace chess {
 
 // Convert board to tensor.
-torch::Tensor BoardToTensor(const std::vector<Board>& board, PieceSide my_side);
+torch::Tensor GameStateToTensor(const GameState& board, PieceSide my_side);
 
 }  // namespace chess
 

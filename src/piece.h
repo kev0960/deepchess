@@ -45,7 +45,7 @@ class Piece {
 
   void MarkPiece(uint64_t& board, int offset) const;
 
-  char Print() const;
+  char Print(char empty = ' ') const;
 
  private:
   // Data is encoded in the last 4 bits.

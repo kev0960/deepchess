@@ -67,18 +67,30 @@ std::vector<Move> Board::GetAvailableMoves() const {
   return moves;
 }
 
-std::string Board::PrintBoard() const {
+std::string Board::PrintBoard(char empty) const {
   std::string board;
   board.reserve(64 + 8);
 
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 8; j++) {
-      board.push_back(PieceAt(i, j).Print());
+      board.push_back(PieceAt(i, j).Print(empty));
     }
     board.push_back('\n');
   }
 
   return board;
+}
+
+std::string Board::PrintNumericBoard() const {
+  std::string b;
+  for (size_t i = 0; i < board_.size(); i ++) {
+    if (i != 0) {
+      b.push_back(',');
+    }
+    b += std::to_string(board_[i]);
+  }
+  
+  return b;
 }
 
 void Board::PutPieceAt(int row, int col, Piece piece) {
@@ -144,7 +156,6 @@ uint64_t Board::GetBinaryAvailableMoveOf(PieceSide side) const {
       auto moves = GetMoveOfPieceAt(row, col);
       for (auto m : moves) {
         binary_board = OnBitAt(binary_board, m.To());
-        fmt::print("{} {} \n", piece.Print(), m.ToStr());
       }
     }
   }
@@ -165,6 +176,14 @@ uint64_t Board::GetBinaryPositionOfAll() const {
   }
 
   return binary_board;
+}
+
+bool Board::operator==(const Board& board) const {
+  return board_ == board.board_;
+}
+
+bool Board::operator!=(const Board& board) const {
+  return board_ != board.board_;
 }
 
 }  // namespace chess

@@ -10,8 +10,8 @@ namespace chess {
 
 class MCTS {
  public:
-  // Create MCTS with starting board.
-  MCTS(const Board& board, Evaluator* evaluator);
+  // Create MCTS with starting game state.
+  MCTS(const GameState& state, Evaluator* evaluator);
 
   void RunMCTS();
 

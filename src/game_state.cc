@@ -1,6 +1,7 @@
 #include "game_state.h"
 
 #include <fmt/core.h>
+#include <fmt/format.h>
 
 #include "bit_util.h"
 
@@ -23,6 +24,37 @@ constexpr uint64_t kBlackQueenSideCastleMoveCheck = 0xE;
 static Piece kWhiteRook(PieceType::ROOK, PieceSide::WHITE);
 static Piece kBlackRook(PieceType::ROOK, PieceSide::BLACK);
 
+int GetRepititionCount(const Board& board, const GameState* prev_state) {
+  int count = 1;
+
+  const GameState* state = prev_state;
+  while (state) {
+    if (board == state->GetBoard()) {
+      count++;
+    }
+
+    state = state->PrevState();
+  }
+
+  return count;
+}
+
+int GetNoProgress(const GameState* prev_state, Move move) {
+  // If there was a piece at the moved location, then the capture is made.
+  if (prev_state->GetBoard().PieceAt(move.ToCoord()).Type() !=
+      PieceType::EMPTY) {
+    return 0;
+  }
+
+  // Or the pawn could be moved.
+  if (prev_state->GetBoard().PieceAt(move.FromCoord()).Type() ==
+      PieceType::PAWN) {
+    return 0;
+  }
+
+  return prev_state->NoProgressCount() + 1;
+}
+
 }  // namespace
 
 GameState::GameState(const Board& board)
@@ -32,7 +64,10 @@ GameState::GameState(const GameState* prev_state, Move move)
     : current_board_(prev_state->GetBoard().DoMove(move)),
       white_castle_(prev_state->white_castle_),
       black_castle_(prev_state->black_castle_),
-      prev_state_(prev_state) {
+      prev_state_(prev_state),
+      rep_count_(GetRepititionCount(current_board_, prev_state)),
+      total_move_(prev_state->total_move_ + 1),
+      no_progress_count_(GetNoProgress(prev_state, move)) {
   if (move.FromCoord() == std::make_pair(0, 0)) {
     black_castle_.queen_side_rook_moved = true;
   } else if (move.FromCoord() == std::make_pair(0, 7)) {

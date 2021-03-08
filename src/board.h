@@ -31,7 +31,8 @@ class Board {
   std::vector<Move> GetAvailableMoves() const;
 
   // Print the board.
-  std::string PrintBoard() const;
+  std::string PrintBoard(char empty = ' ') const;
+  std::string PrintNumericBoard() const;
 
   // Put piece at specified coord.
   void PutPieceAt(int row, int col, Piece piece);
@@ -54,6 +55,9 @@ class Board {
   uint64_t GetBinaryAvailableMoveOf(PieceSide side) const;
 
   uint64_t GetBinaryPositionOfAll() const;
+
+  bool operator==(const Board& board) const;
+  bool operator!=(const Board& board) const;
 
  private:
   // Presence of pieces on the board.

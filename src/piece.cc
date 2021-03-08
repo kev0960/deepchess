@@ -37,10 +37,10 @@ Piece::Piece(std::string_view piece) {
   info_ |= (static_cast<int>(type) | ((std::islower(ch) ? 1 : 0) << 3));
 }
 
-char Piece::Print() const {
+char Piece::Print(char empty) const {
   switch (Type()) {
     case EMPTY:
-      return ' ';
+      return empty;
     case PAWN:
       return Side() ? 'p' : 'P';
     case KNIGHT:

@@ -4,14 +4,14 @@
 #include <utility>
 #include <vector>
 
-#include "board.h"
+#include "game_state.h"
 #include "move.h"
 
 namespace chess {
 
 class MCTSNode {
  public:
-  MCTSNode(const Board& board, MCTSNode* parent, float prior);
+  MCTSNode(const GameState& state, MCTSNode* parent, float prior);
 
   // If the node (or any child node) is visited, update the W value and increase
   // the visit count.
@@ -26,7 +26,7 @@ class MCTSNode {
   float PUCT(int total_visit) const;
 
   // Get the state represented by this node.
-  const Board& State() const;
+  const GameState& State() const;
 
   MCTSNode* Parent() const;
 
@@ -38,7 +38,7 @@ class MCTSNode {
 
  private:
   // State.
-  const Board board_;
+  const GameState state_;
 
   MCTSNode* parent_;
 

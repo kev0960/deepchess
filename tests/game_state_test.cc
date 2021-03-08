@@ -1,5 +1,7 @@
 #include "game_state.h"
 
+#include <fmt/core.h>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "test_utils.h"
@@ -151,6 +153,43 @@ r...k.r.
 
   EXPECT_THAT(state.CanBlackCastle(), Pair(false, true));
   EXPECT_THAT(state.CanWhiteCastle(), Pair(true, false));
+}
+
+TEST(GameStateTest, RepititionCountTest) {
+  GameStateBuilder builder;
+
+  builder
+      .DoMove(Move(7, 1, 5, 2))  // Nb3
+      .DoMove(Move(0, 1, 2, 2))  // Nc6
+      /* White Knight goes back to original position. */
+      .DoMove(Move(5, 2, 7, 1))
+      /* Black Knight goes back to original position. */
+      .DoMove(Move(2, 2, 0, 1));
+
+  auto& states = builder.GetStates();
+  EXPECT_EQ(states.back()->TotalMoveCount(), 4);
+  EXPECT_EQ(states.back()->RepititionCount(), 2);
+  EXPECT_EQ(states.back()->NoProgressCount(), 4);
+}
+
+TEST(GameStateTest, NoProgressCountTest) {
+  GameStateBuilder builder;
+
+  builder
+      .DoMove(Move(7, 1, 5, 2))   // Nb3
+      .DoMove(Move(0, 1, 2, 2));  // Nc6
+
+  auto& states = builder.GetStates();
+  EXPECT_EQ(states.back()->NoProgressCount(), 2);
+
+  builder.DoMove(Move(6, 1, 4, 1)); // Makes a pawn move.
+  EXPECT_EQ(states.back()->NoProgressCount(), 0);
+
+  builder.DoMove(Move(2, 2, 4, 1)); // Knight captures pawn.
+  EXPECT_EQ(states.back()->NoProgressCount(), 0);
+
+  builder.DoMove(Move(7, 6, 5, 5)); // White knight moves.
+  EXPECT_EQ(states.back()->NoProgressCount(), 1);
 }
 
 }  // namespace
