@@ -28,6 +28,9 @@ class Move {
   std::string ToStr() const;
   std::string Str() const;
 
+  bool operator==(const Move& move) const { return from_to_ == move.from_to_; }
+  bool operator!=(const Move& move) const { return from_to_ != move.from_to_; }
+
  private:
   // [0 ~ 63][0 ~ 63]; The position on the board.
   uint16_t from_to_;

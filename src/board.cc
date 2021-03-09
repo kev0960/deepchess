@@ -24,6 +24,24 @@ std::pair<int, int> ChessNotationToCoord(std::string_view notation) {
   return std::make_pair(row, col);
 }
 
+bool IsKingOkay(const Board& board, PieceSide opponent, Move move,
+                int king_pos) {
+  Board b = board.DoMove(move);
+
+  if (move.From() == king_pos) {
+    king_pos = move.To();
+  }
+
+  auto moves = b.GetAvailableMoves(opponent);
+  for (auto m : moves) {
+    if (m.To() == king_pos) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 }  // namespace
 
 Board::Board() { board_.fill(0); }
@@ -67,6 +85,54 @@ std::vector<Move> Board::GetAvailableMoves() const {
   return moves;
 }
 
+std::vector<Move> Board::GetAvailableMoves(PieceSide who) const {
+  std::vector<Move> moves;
+
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      if (PieceAt(i, j).Side() == who && PieceAt(i, j).Type() != EMPTY) {
+        std::vector<Move> piece_moves = GetMoveOfPieceAt(i, j);
+        moves.insert(moves.end(), piece_moves.begin(), piece_moves.end());
+      }
+    }
+  }
+
+  return moves;
+}
+
+std::vector<Move> Board::GetAvailableLegalMoves(PieceSide me) const {
+  std::vector<Move> moves;
+
+  int king_pos = 0;
+
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      if (PieceAt(i, j).Side() == me && PieceAt(i, j).Type() == KING) {
+        // TODO Find more generic way to match it to Move's To and From.
+        king_pos = i * 8 + j;
+        break;
+      }
+    }
+  }
+
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      if (PieceAt(i, j).Side() != me || PieceAt(i, j).Type() == EMPTY) {
+        continue;
+      }
+
+      std::vector<Move> piece_moves = GetMoveOfPieceAt(i, j);
+      for (auto m : piece_moves) {
+        if (IsKingOkay(*this, me == BLACK ? WHITE : BLACK, m, king_pos)) {
+          moves.push_back(m);
+        }
+      }
+    }
+  }
+
+  return moves;
+}
+
 std::string Board::PrintBoard(char empty) const {
   std::string board;
   board.reserve(64 + 8);
@@ -83,13 +149,13 @@ std::string Board::PrintBoard(char empty) const {
 
 std::string Board::PrintNumericBoard() const {
   std::string b;
-  for (size_t i = 0; i < board_.size(); i ++) {
+  for (size_t i = 0; i < board_.size(); i++) {
     if (i != 0) {
       b.push_back(',');
     }
     b += std::to_string(board_[i]);
   }
-  
+
   return b;
 }
 

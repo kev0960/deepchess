@@ -4,9 +4,12 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "test_utils.h"
 
 namespace chess {
 namespace {
+
+using ::testing::UnorderedElementsAreArray;
 
 TEST(BoardTest, SimpleBoard) {
   std::vector<PiecesOnBoard> pieces = {
@@ -37,6 +40,61 @@ RNBQKBNR
 )";
 
   EXPECT_EQ(board.PrintBoard(), chess_board);
+}
+
+TEST(BoardTest, TestCheck) {
+  const Board b = BoardFromNotation(R"(
+....k...
+....q...
+........
+........
+........
+........
+....B...
+....K...
+)");
+
+  const std::vector<Move> moves = b.GetAvailableLegalMoves(PieceSide::WHITE);
+  for (auto m : moves) {
+    fmt::print("m : {}  \n", m.Str());
+  }
+
+  EXPECT_THAT(moves,
+              UnorderedElementsAreArray({Move(7, 4, 7, 3), Move(7, 4, 7, 5),
+                                         Move(7, 4, 6, 3), Move(7, 4, 6, 5)}));
+}
+
+TEST(BoardTest, TestCheck2) {
+  const Board b = BoardFromNotation(R"(
+....k...
+....q...
+........
+........
+........
+..p...p.
+....B...
+....K...
+)");
+
+  const std::vector<Move> moves = b.GetAvailableLegalMoves(PieceSide::WHITE);
+  EXPECT_THAT(moves,
+              UnorderedElementsAreArray({Move(7, 4, 7, 3), Move(7, 4, 7, 5)}));
+}
+
+TEST(BoardTest, TestCheckMate) {
+  const Board b = BoardFromNotation(R"(
+....k...
+........
+......r.
+........
+....b...
+........
+.......P
+.......K
+)");
+
+  const std::vector<Move> moves = b.GetAvailableLegalMoves(PieceSide::WHITE);
+  EXPECT_EQ(moves.size(), 0);
 }
 
 }  // namespace

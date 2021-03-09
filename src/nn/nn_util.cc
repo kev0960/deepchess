@@ -19,6 +19,8 @@ void SetPieceOnTensor(const Board& board, PieceSide me, int n_th,
       }
 
       switch (piece.Type()) {
+        case PieceType::PAWN:
+          break;
         case PieceType::KNIGHT:
           index += 1;
           break;
@@ -34,8 +36,8 @@ void SetPieceOnTensor(const Board& board, PieceSide me, int n_th,
         case PieceType::KING:
           index += 5;
           break;
-        default:
-          break;
+        case PieceType::EMPTY:
+          continue;
       }
 
       tensor->index_put_({index + n_th * 14, row, col}, 1);
@@ -46,13 +48,11 @@ void SetPieceOnTensor(const Board& board, PieceSide me, int n_th,
 void SetRepititionsOnTensor(const GameState& game_state, int n_th,
                             torch::Tensor* tensor) {
   if (game_state.RepititionCount() >= 2) {
-    // tensor[14::] = 1
-    tensor->index_put_({Slice(14 * n_th + 12, None, None)}, 1);
+    tensor->index_put_({14 * n_th + 12}, 1);
   }
 
   if (game_state.RepititionCount() >= 3) {
-    // tensor[14::] = 1
-    tensor->index_put_({Slice(14 * n_th + 13, None, None)}, 1);
+    tensor->index_put_({14 * n_th + 13}, 1);
   }
 }
 
@@ -67,10 +67,10 @@ void SetCastling(const GameState& game_state, PieceSide side,
 
   // Set P1 Castling.
   if (castling.first) {
-    tensor->index_put_({Slice(14 * 8 + 2, None, None)}, 1);
+    tensor->index_put_({14 * 8 + 2}, 1);
   }
   if (castling.second) {
-    tensor->index_put_({Slice(14 * 8 + 3, None, None)}, 1);
+    tensor->index_put_({14 * 8 + 3}, 1);
   }
 
   if (side == PieceSide::BLACK) {
@@ -81,26 +81,22 @@ void SetCastling(const GameState& game_state, PieceSide side,
 
   // Set P2 Castling.
   if (castling.first) {
-    tensor->index_put_({Slice(14 * 8 + 4, None, None)}, 1);
+    tensor->index_put_({14 * 8 + 4}, 1);
   }
   if (castling.second) {
-    tensor->index_put_({Slice(14 * 8 + 5, None, None)}, 1);
+    tensor->index_put_({14 * 8 + 5}, 1);
   }
 }
 
 void SetAuxiliaryData(const GameState& game_state, PieceSide side,
                       torch::Tensor* tensor) {
   if (side == PieceSide::BLACK) {
-    tensor->index_put_({Slice(14 * 8, None, None)}, 1);
+    tensor->index_put_({14 * 8}, 1);
   }
 
-  tensor->index_put_({Slice(14 * 8 + 1, None, None)},
-                     game_state.TotalMoveCount());
-
+  tensor->index_put_({14 * 8 + 1}, game_state.TotalMoveCount());
   SetCastling(game_state, side, tensor);
-
-  tensor->index_put_({Slice(14 * 8 + 6, None, None)},
-                     game_state.NoProgressCount());
+  tensor->index_put_({14 * 8 + 6}, game_state.NoProgressCount());
 }
 
 }  // namespace
@@ -108,7 +104,7 @@ void SetAuxiliaryData(const GameState& game_state, PieceSide side,
 // Needs 8 previous board states. (Newest is the last element).
 torch::Tensor GameStateToTensor(const GameState& current_state,
                                 PieceSide my_side) {
-  torch::Tensor tensor = torch::zeros({117, 8, 8});
+  torch::Tensor tensor = torch::zeros({119, 8, 8});
 
   // Scan entire board and construct the board.
   int n_th = 0;

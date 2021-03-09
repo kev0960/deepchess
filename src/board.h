@@ -29,6 +29,11 @@ class Board {
 
   // Get list of possible moves.
   std::vector<Move> GetAvailableMoves() const;
+  std::vector<Move> GetAvailableMoves(PieceSide who) const;
+
+  // Get list of moves that I can do which does not make my king
+  // checked.
+  std::vector<Move> GetAvailableLegalMoves(PieceSide me) const;
 
   // Print the board.
   std::string PrintBoard(char empty = ' ') const;

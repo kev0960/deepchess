@@ -40,6 +40,8 @@ Board BoardFromNotation(std::string_view notation) {
         case 'k':
           piece_type = PieceType::KING;
           break;
+        default:
+          continue;
       }
 
       PieceSide side = PieceSide::WHITE;
