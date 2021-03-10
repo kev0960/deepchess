@@ -1,6 +1,17 @@
 #include "pawn.h"
 
 namespace chess {
+namespace {
+
+void AddPromotion(int row, int col, int next_row, int next_col,
+                  std::vector<Move>* moves) {
+  moves->push_back(Move(row, col, next_row, next_col, PROMOTE_QUEEN));
+  moves->push_back(Move(row, col, next_row, next_col, PROMOTE_KNIGHT));
+  moves->push_back(Move(row, col, next_row, next_col, PROMOTE_BISHOP));
+  moves->push_back(Move(row, col, next_row, next_col, PROMOTE_ROOK));
+}
+
+}  // namespace
 
 std::vector<Move> PawnMove::GetMoves(const Board& board, const Piece& piece,
                                      int row, int col) {
@@ -11,24 +22,43 @@ std::vector<Move> PawnMove::GetMoves(const Board& board, const Piece& piece,
 
   int next_row = row + y_dir;
 
+  // When the pawn reaches the end of the row, then it should be promoted.
+  bool need_promo = false;
+  if ((piece.Side() == WHITE && next_row == 0) ||
+      (piece.Side() == BLACK && next_row == 7)) {
+    need_promo = true;
+  }
+
   // Pawn is already at the end.
   if (next_row < 0 || next_row >= 8) {
     return moves;
   }
 
   if (board.IsEmptyAt(next_row, col)) {
-    moves.push_back(Move(row, col, next_row, col));
+    if (need_promo) {
+      AddPromotion(row, col, next_row, col, &moves);
+    } else {
+      moves.push_back(Move(row, col, next_row, col));
+    }
   }
 
   // Can move diagonally when capturing the opponent piece.
   if (col + 1 < 8 &&
       board.PieceAt(next_row, col + 1).IsOpponent(piece.Side())) {
-    moves.push_back(Move(row, col, next_row, col + 1));
+    if (need_promo) {
+      AddPromotion(row, col, next_row, col + 1, &moves);
+    } else {
+      moves.push_back(Move(row, col, next_row, col + 1));
+    }
   }
 
   if (col - 1 >= 0 &&
       board.PieceAt(next_row, col - 1).IsOpponent(piece.Side())) {
-    moves.push_back(Move(row, col, next_row, col - 1));
+    if (need_promo) {
+      AddPromotion(row, col, next_row, col - 1, &moves);
+    } else {
+      moves.push_back(Move(row, col, next_row, col - 1));
+    }
   }
 
   // Can move two steps if the pawn is at the starting position.

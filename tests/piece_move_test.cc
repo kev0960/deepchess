@@ -8,6 +8,21 @@ namespace {
 
 using ::testing::UnorderedElementsAre;
 
+char PromotionToChar(Promotion p) {
+  switch (p) {
+    case PROMOTE_QUEEN:
+      return 'Q';
+    case PROMOTE_BISHOP:
+      return 'B';
+    case PROMOTE_KNIGHT:
+      return 'N';
+    case PROMOTE_ROOK:
+      return 'R';
+  }
+
+  return 'P';
+}
+
 class PieceMoveTest : public testing::Test {
  protected:
   std::vector<std::string> ConvertMovesToChessNotation(
@@ -15,6 +30,9 @@ class PieceMoveTest : public testing::Test {
     std::vector<std::string> notations;
     for (auto& m : moves) {
       notations.push_back(m.ToStr());
+      if (m.GetPromotion() != NO_PROMOTE) {
+        notations.back().push_back(PromotionToChar(m.GetPromotion()));
+      }
     }
 
     return notations;
@@ -110,6 +128,17 @@ TEST_F(PieceMoveTest, PawnCapture) {
 
     EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("c3")),
                 UnorderedElementsAre("c4"));
+  }
+}
+
+TEST_F(PieceMoveTest, PawnPromotion) {
+  {
+    std::vector<PiecesOnBoard> pieces = {{"P", {"c7"}}, {"p", {"d8"}}};
+    Board board(pieces);
+
+    EXPECT_THAT(ConvertMovesToChessNotation(board.GetMoveOfPieceAt("c7")),
+                UnorderedElementsAre("c8Q", "c8N", "c8B", "c8R", "d8Q", "d8N",
+                                     "d8B", "d8R"));
   }
 }
 

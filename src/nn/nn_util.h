@@ -10,7 +10,9 @@
 namespace chess {
 
 // Convert board to tensor.
-torch::Tensor GameStateToTensor(const GameState& board, PieceSide my_side);
+torch::Tensor GameStateToTensor(const GameState& current_state);
+
+int GetModelNumParams(const torch::nn::Module& m);
 
 }  // namespace chess
 

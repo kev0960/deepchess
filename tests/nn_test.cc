@@ -4,6 +4,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "nn/chess_nn.h"
 #include "nn/nn_util.h"
 #include "test_utils.h"
 
@@ -13,7 +14,7 @@ namespace {
 TEST(GameStateToTensorTest, GameStateToTensor) {
   const GameState state = GameState::CreateInitGameState();
 
-  torch::Tensor tensor = GameStateToTensor(state, PieceSide::WHITE);
+  torch::Tensor tensor = GameStateToTensor(state);
 
   float white_pawn[] = {
       0, 0, 0, 0, 0, 0, 0, 0,  // 8
@@ -50,7 +51,7 @@ TEST(GameStateToTensorTest, MultipleStates) {
       .DoMove(Move(0, 1, 2, 2));  // Nc6
 
   auto& states = builder.GetStates();
-  torch::Tensor tensor = GameStateToTensor(*states.back(), PieceSide::WHITE);
+  torch::Tensor tensor = GameStateToTensor(*states.back());
 
   // Let's check the position of knights.
   float white_knight_current[] = {
@@ -137,7 +138,7 @@ TEST(GameStateToTensorTest, Castling) {
   // RNBQK  R
 
   auto& states = builder.GetStates();
-  torch::Tensor tensor = GameStateToTensor(*states.back(), PieceSide::WHITE);
+  torch::Tensor tensor = GameStateToTensor(*states.back());
 
   float white_bishop_current[] = {
       0, 0, 0, 0, 0, 0, 0, 0,  // 8
@@ -189,6 +190,13 @@ TEST(GameStateToTensorTest, Castling) {
   EXPECT_TRUE(tensor.index({115}).equal(torch::full({8, 8}, 0.f)));
   EXPECT_TRUE(tensor.index({116}).equal(torch::full({8, 8}, 0.f)));
   EXPECT_TRUE(tensor.index({117}).equal(torch::full({8, 8}, 0.f)));
+}
+
+TEST(ChessNNTest, ChessNN) {
+  ChessNN model(152, 119);
+
+  fmt::print("Total : {} {}MB\n", GetModelNumParams(model),
+             GetModelNumParams(model) * 4 / 1024.f / 1024.f);
 }
 
 }  // namespace

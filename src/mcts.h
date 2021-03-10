@@ -11,9 +11,13 @@ namespace chess {
 class MCTS {
  public:
   // Create MCTS with starting game state.
-  MCTS(const GameState& state, Evaluator* evaluator);
+  MCTS(const GameState* state, Evaluator* evaluator);
 
   void RunMCTS();
+
+  // Get the policy vector. Policy vector is the flattened 1d vector of 73 * 8
+  // * 8 (= 1 * 4672).
+  torch::Tensor GetPolicyVector();
 
  private:
   // Select the node to expand.

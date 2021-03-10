@@ -55,13 +55,23 @@ int GetNoProgress(const GameState* prev_state, Move move) {
   return prev_state->NoProgressCount() + 1;
 }
 
+PieceSide GetOpponent(PieceSide side) {
+  if (side == PieceSide::WHITE) {
+    return PieceSide::BLACK;
+  }
+  return PieceSide::WHITE;
+}
+
 }  // namespace
 
-GameState::GameState(const Board& board)
-    : current_board_(board), prev_state_(nullptr) {}
+GameState::GameState(const Board& board, PieceSide who_is_moving)
+    : current_board_(board),
+      who_is_moving_(who_is_moving),
+      prev_state_(nullptr) {}
 
 GameState::GameState(const GameState* prev_state, Move move)
     : current_board_(prev_state->GetBoard().DoMove(move)),
+      who_is_moving_(GetOpponent(prev_state->WhoIsMoving())),
       white_castle_(prev_state->white_castle_),
       black_castle_(prev_state->black_castle_),
       prev_state_(prev_state),
@@ -213,13 +223,41 @@ GameState GameState::CreateInitGameState() {
       {"p", {"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7"}},
   };
 
-  GameState state(Board{pieces});
+  GameState state(Board{pieces}, /*who_is_moving=*/PieceSide::WHITE);
   return state;
 }
 
-GameState GameState::CreateGameStateForTesting(const Board& board) {
-  GameState state(board);
+GameState GameState::CreateGameStateForTesting(const Board& board,
+                                               PieceSide who_is_moving) {
+  GameState state(board, who_is_moving);
   return state;
+}
+
+std::vector<Move> GameState::GetLegalMoves() const {
+  // All available moves except for castling and en-passnt
+  std::vector<Move> moves =
+      current_board_.GetAvailableLegalMoves(who_is_moving_);
+
+  if (who_is_moving_ == PieceSide::WHITE) {
+    auto [king_side, queen_side] = CanWhiteCastle();
+    if (king_side) {
+      moves.push_back(Move(7, 4, 7, 6));
+    }
+    if (queen_side) {
+      moves.push_back(Move(7, 4, 7, 2));
+    }
+  } else if (who_is_moving_ == PieceSide::BLACK) {
+    auto [king_side, queen_side] = CanBlackCastle();
+    if (king_side) {
+      moves.push_back(Move(0, 4, 0, 6));
+    }
+    if (queen_side) {
+      moves.push_back(Move(0, 4, 0, 2));
+    }
+  }
+
+  // TODO Handle Enpassant.
+  return moves;
 }
 
 }  // namespace chess

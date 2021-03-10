@@ -21,7 +21,8 @@ ChessNN::ChessNN(int num_layer, int num_filter) {
       "conv_value",
       torch::nn::Conv2d(
           torch::nn::Conv2dOptions(num_filter, 32, {3, 3}).stride(1)));
-  fc_policy_ = register_module("fc_policy", torch::nn::Linear(32 * 8 * 8, 1));
+
+  fc_value_ = register_module("fc_value", torch::nn::Linear(32 * 8 * 8, 1));
 }
 
 torch::Tensor ChessNN::GetPolicy(torch::Tensor state) {

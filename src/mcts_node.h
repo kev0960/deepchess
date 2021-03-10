@@ -1,6 +1,7 @@
 #ifndef MCTS_NODE_H
 #define MCTS_NODE_H
 
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -9,9 +10,12 @@
 
 namespace chess {
 
+// Node of MCTS.
+//
+// Note that each MCTS node *owns* the GameState that it represents.
 class MCTSNode {
  public:
-  MCTSNode(const GameState& state, MCTSNode* parent, float prior);
+  MCTSNode(std::unique_ptr<GameState> state, MCTSNode* parent, float prior);
 
   // If the node (or any child node) is visited, update the W value and increase
   // the visit count.
@@ -38,7 +42,7 @@ class MCTSNode {
 
  private:
   // State.
-  const GameState state_;
+  std::unique_ptr<GameState> state_;
 
   MCTSNode* parent_;
 

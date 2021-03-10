@@ -3,6 +3,7 @@
 #include <fmt/core.h>
 
 #include "bit_util.h"
+#include "move.h"
 #include "piece_moves/bishop.h"
 #include "piece_moves/king.h"
 #include "piece_moves/knight.h"
@@ -40,6 +41,22 @@ bool IsKingOkay(const Board& board, PieceSide opponent, Move move,
   }
 
   return true;
+}
+
+Piece GetPromotedPiece(Promotion promo, PieceSide side) {
+  switch (promo) {
+    case PROMOTE_QUEEN:
+      return Piece(QUEEN, side);
+    case PROMOTE_KNIGHT:
+      return Piece(KNIGHT, side);
+    case PROMOTE_BISHOP:
+      return Piece(BISHOP, side);
+    case PROMOTE_ROOK:
+      return Piece(ROOK, side);
+    default:
+      // TODO Mark this as an error.
+      return Piece(PAWN, side);
+  }
 }
 
 }  // namespace
@@ -202,8 +219,13 @@ std::vector<Move> Board::GetMoveOfPieceAt(std::string_view coord) const {
 Board Board::DoMove(Move m) const {
   Board next(*this);
 
+  Piece piece = PieceAt(m.FromCoord());
+  if (m.GetPromotion() != NO_PROMOTE) {
+    piece = GetPromotedPiece(m.GetPromotion(), piece.Side());
+  }
+
   // Mark as empty.
-  next.PutPieceAt(m.ToCoord(), PieceAt(m.FromCoord()));
+  next.PutPieceAt(m.ToCoord(), piece);
   next.PutPieceAt(m.FromCoord(), Piece(" "));
 
   return next;

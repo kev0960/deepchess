@@ -7,11 +7,11 @@ namespace chess {
 
 // Following is the representation of the board in the 64bit integer.
 //
-// 8  56 57 ... 63
-// 7  48 49 ... 55
-//        ...
-//        ...
-// 1  0  1      7
+// 8  0   1 ...  7
+// 7  8   9 ... 15
+//          ...
+//          ...
+// 1  56 57 ... 63
 //    a  b      h
 class Bitboard {
  public:

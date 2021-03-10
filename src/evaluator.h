@@ -10,7 +10,9 @@ namespace chess {
 
 class Evaluator {
  public:
-  virtual float Evalulate(const GameState& board, ChessNN* chess_net);
+  Evaluator(ChessNN* chess_net) : chess_net_(chess_net) {}
+
+  virtual float Evalulate(const GameState& board);
 
  private:
   ChessNN* chess_net_;

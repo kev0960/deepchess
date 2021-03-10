@@ -17,12 +17,14 @@ class GameState {
  public:
   // Create the init game state.
   static GameState CreateInitGameState();
-  static GameState CreateGameStateForTesting(const Board& board);
+  static GameState CreateGameStateForTesting(
+      const Board& board, PieceSide who_is_moving = PieceSide::WHITE);
 
   GameState(const GameState* prev_state, Move move);
 
   const Board& GetBoard() const { return current_board_; }
   const GameState* PrevState() const { return prev_state_; }
+  PieceSide WhoIsMoving() const { return who_is_moving_; }
 
   // Returns (O-O, O-O-O)
   std::pair<bool, bool> CanWhiteCastle() const;
@@ -32,11 +34,17 @@ class GameState {
   int TotalMoveCount() const { return total_move_; }
   int NoProgressCount() const { return no_progress_count_; }
 
+  // Get legal moves (the move that does not put King into check).
+  std::vector<Move> GetLegalMoves() const;
+
  private:
   // Should be only used by factory.
-  GameState(const Board& board);
+  GameState(const Board& board, PieceSide who_is_moving);
 
   Board current_board_;
+
+  // The color that moved to reach this state.
+  PieceSide who_is_moving_ = PieceSide::WHITE;
 
   CastlingAvail white_castle_, black_castle_;
   const GameState* prev_state_ = nullptr;
