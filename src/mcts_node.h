@@ -17,9 +17,11 @@ class MCTSNode {
  public:
   MCTSNode(std::unique_ptr<GameState> state, MCTSNode* parent, float prior);
 
-  // If the node (or any child node) is visited, update the W value and increase
-  // the visit count.
-  void UpdateWithValue(float value);
+  // Update the Q(s,a) where s is the previous state.
+  void UpdateQ(float value);
+
+  // Set the value of this state (from the estimiation of NN)
+  void SetValueOfThisState(float value);
 
   // Add a child node.
   void AddChildNode(MCTSNode* node, const Move& move);
@@ -37,8 +39,11 @@ class MCTSNode {
   // Total number of visit of this node.
   int Visit() const;
 
-  // Q score of this node (W / visit_)
+  // Returns Q(s,a), which is W(s,a) / N(s,a). Note that s is a previous state.
   float Q() const;
+
+  // Value estimate of the current state.
+  float V() const;
 
  private:
   // State.
@@ -46,14 +51,17 @@ class MCTSNode {
 
   MCTSNode* parent_;
 
-  // W(s)
-  float value_;
+  // W(s,a) where s is the previous state.
+  float w_s_a_;
+
+  // Value of this node estimated by the neural net.
+  float v_;
 
   // Prior probability.
   float prior_;
 
-  // N(s)
-  int visit_;
+  // N(s, a) where s is the previous node.
+  int n_s_a_;
 
   // Child nodes and actions.
   std::vector<std::pair<MCTSNode*, Move>> next_state_actions_;

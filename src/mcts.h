@@ -26,11 +26,11 @@ class MCTS {
   // Expand the leaf node.
   void Expand(MCTSNode* node);
 
-  // Evaluate the node and return Q value.
+  // Evaluate the node and return value estimate of the node.
   float Evaluate(const MCTSNode* node);
 
-  // Backup starting from the leaf node with the Q value.
-  void Backup(MCTSNode* leaf_node, float q);
+  // Backup starting from the leaf node with the value.
+  void Backup(MCTSNode* leaf_node);
 
   std::vector<std::unique_ptr<MCTSNode>> nodes_;
 

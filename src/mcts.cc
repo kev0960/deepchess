@@ -20,7 +20,9 @@ void MCTS::RunMCTS() {
   // leaf. If it is good, then it means it is bad for the previous player. So
   // when we backpropagate, we alternate the sign of q.
   float q = Evaluate(leaf);
-  Backup(leaf, q);
+  leaf->SetValueOfThisState(q);
+
+  Backup(leaf);
 }
 
 // Select the leaf node to expand.
@@ -35,7 +37,7 @@ MCTSNode* MCTS::Select() {
 
     // If not empty, then find the one with the largest Q + U.
     MCTSNode* max_elem = nullptr;
-    float max_score = 0;
+    float max_score = -10000000;
 
     for (auto& [node, action] : current->Children()) {
       if (node->Visit() == 0) {
@@ -43,6 +45,9 @@ MCTSNode* MCTS::Select() {
         break;
       }
 
+      // Since the node->Q() is computed from the perspective of opponent
+      // player, we have to negate the returned Q to convert it to the
+      // perspective of the current player.
       float q_plus_u = node->PUCT(current->Visit()) + node->Q();
       if (max_elem == nullptr || q_plus_u > max_score) {
         max_elem = node;
@@ -74,18 +79,26 @@ float MCTS::Evaluate(const MCTSNode* node) {
   return evaluator_->Evalulate(node->State());
 }
 
-void MCTS::Backup(MCTSNode* leaf_node, float q) {
+void MCTS::Backup(MCTSNode* leaf_node) {
+  // Negate the value estimate as this is measured from the perspective of
+  // curret node's player. However, Q(s,a) is computed from the perspective of
+  // previous player. So we simply negate the value.
+  float q = -leaf_node->V();
   MCTSNode* current = leaf_node;
+
   while (current) {
-    current->UpdateWithValue(q);
+    current->UpdateQ(q);
     current = current->Parent();
+
+    // Since the player alternates by the state, we have to negate the sign
+    // every time.
     q = q * -1;
   }
 }
 
 torch::Tensor GetPolicyVector() {
   torch::Tensor policy = torch::zeros({73, 8, 8});
-  
+
   // Return it as a 1d vector.
   return policy.flatten(0);
 }

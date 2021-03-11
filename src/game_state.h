@@ -2,6 +2,7 @@
 #define GAME_STATE_H
 
 #include "board.h"
+#include "util.h"
 
 namespace chess {
 
@@ -35,11 +36,13 @@ class GameState {
   int NoProgressCount() const { return no_progress_count_; }
 
   // Get legal moves (the move that does not put King into check).
-  std::vector<Move> GetLegalMoves() const;
+  std::vector<Move> GetLegalMoves() const ;
 
  private:
   // Should be only used by factory.
   GameState(const Board& board, PieceSide who_is_moving);
+
+  std::vector<Move> ComputeLegalMoves() const;
 
   Board current_board_;
 
@@ -58,6 +61,9 @@ class GameState {
   // Increments when no capture or pawn move has been made. Resets to 0 if that
   // is done.
   int no_progress_count_ = 0;
+
+  // Get legal moves. Once computed, it is cached here.
+  mutable LazyGet<std::vector<Move>> legal_moves_;
 };
 
 }  // namespace chess

@@ -233,7 +233,7 @@ GameState GameState::CreateGameStateForTesting(const Board& board,
   return state;
 }
 
-std::vector<Move> GameState::GetLegalMoves() const {
+std::vector<Move> GameState::ComputeLegalMoves() const {
   // All available moves except for castling and en-passnt
   std::vector<Move> moves =
       current_board_.GetAvailableLegalMoves(who_is_moving_);
@@ -258,6 +258,10 @@ std::vector<Move> GameState::GetLegalMoves() const {
 
   // TODO Handle Enpassant.
   return moves;
+}
+
+std::vector<Move> GameState::GetLegalMoves() const {
+  return legal_moves_.Get([this]() { return ComputeLegalMoves(); });
 }
 
 }  // namespace chess

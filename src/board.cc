@@ -59,6 +59,32 @@ Piece GetPromotedPiece(Promotion promo, PieceSide side) {
   }
 }
 
+Board DoCastling(const Board& board, Move m) {
+  Board next(board);
+
+  Piece king = board.PieceAt(m.FromCoord());
+  Piece rook(PieceType::ROOK, king.Side());
+  Piece empty(" ");
+
+  if (m.FromCoord().second < m.ToCoord().second) {
+    // King side castling.
+    next.PutPieceAt(m.ToCoord(), king);
+    next.PutPieceAt(m.FromCoord(), empty);
+
+    next.PutPieceAt(m.FromCoord().first, 5, rook);
+    next.PutPieceAt(m.FromCoord().first, 7, empty);
+  } else {
+    // Queen side castling.
+    next.PutPieceAt(m.ToCoord(), king);
+    next.PutPieceAt(m.FromCoord(), empty);
+
+    next.PutPieceAt(m.FromCoord().first, 3, rook);
+    next.PutPieceAt(m.FromCoord().first, 0, empty);
+  }
+
+  return next;
+}
+
 }  // namespace
 
 Board::Board() { board_.fill(0); }
@@ -222,6 +248,14 @@ Board Board::DoMove(Move m) const {
   Piece piece = PieceAt(m.FromCoord());
   if (m.GetPromotion() != NO_PROMOTE) {
     piece = GetPromotedPiece(m.GetPromotion(), piece.Side());
+  }
+
+  // Check if it is a castling.
+  if (piece.Type() == PieceType::KING) {
+    // If the king has moved two blocks, then it is a castling!
+    if (std::abs(m.ToCoord().second - m.FromCoord().second) == 2) {
+      return DoCastling(*this, m);
+    }
   }
 
   // Mark as empty.

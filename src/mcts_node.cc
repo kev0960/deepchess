@@ -8,14 +8,17 @@ MCTSNode::MCTSNode(std::unique_ptr<GameState> game_state, MCTSNode* parent,
                    float prior)
     : state_(std::move(game_state)),
       parent_(parent),
-      value_(0),
+      w_s_a_(0),
+      v_(0),
       prior_(prior),
-      visit_(0) {}
+      n_s_a_(0) {}
 
-void MCTSNode::UpdateWithValue(float value) {
-  value_ += value;
-  visit_ += 1;
+void MCTSNode::UpdateQ(float value) {
+  w_s_a_ += value;
+  n_s_a_ += 1;
 }
+
+void MCTSNode::SetValueOfThisState(float value) { v_ = value; }
 
 void MCTSNode::AddChildNode(MCTSNode* node, const Move& move) {
   next_state_actions_.push_back(std::make_pair(node, move));
@@ -26,15 +29,17 @@ std::vector<std::pair<MCTSNode*, Move>>& MCTSNode::Children() {
 }
 
 float MCTSNode::PUCT(int total_visit) const {
-  return prior_ * std::sqrt(total_visit) / (1 + visit_);
+  return prior_ * std::sqrt(total_visit) / (1 + n_s_a_);
 }
 
 const GameState& MCTSNode::State() const { return *state_; }
 
 MCTSNode* MCTSNode::Parent() const { return parent_; }
 
-int MCTSNode::Visit() const { return visit_; }
+int MCTSNode::Visit() const { return n_s_a_; }
 
-float MCTSNode::Q() const { return value_ / visit_; }
+float MCTSNode::Q() const { return w_s_a_ / n_s_a_; }
+
+float MCTSNode::V() const { return v_; }
 
 }  // namespace chess
