@@ -1,5 +1,7 @@
 #include "mcts.h"
 
+#include "nn/nn_util.h"
+
 namespace chess {
 
 MCTS::MCTS(const GameState* state, Evaluator* evaluator)
@@ -64,6 +66,9 @@ void MCTS::Expand(MCTSNode* node) {
   // Expand the node by adding the child (node, actions).
   const GameState& state = node->State();
 
+  // If current state is draw, then it is over.
+  if (state.IsDraw()) { return ;}
+
   std::vector<Move> possible_moves = state.GetLegalMoves();
 
   // TODO Also need to consider king castling.
@@ -95,11 +100,40 @@ void MCTS::Backup(MCTSNode* leaf_node) {
   }
 }
 
-torch::Tensor MCTS::GetPolicyVector() {
-  torch::Tensor policy = torch::zeros({73, 8, 8});
+torch::Tensor MCTS::GetPolicyVector() const {
+  std::vector<std::pair<Move, float>> move_and_prob;
+  move_and_prob.reserve(root_->Children().size());
+
+  float total_visit = 0;
+  for (const auto& [child_node, move] : root_->Children()) {
+    move_and_prob.push_back(std::make_pair(move, child_node->Visit()));
+    total_visit += child_node->Visit();
+  }
+
+  // Now we normalize the visit count.
+  for (auto& [move, prob] : move_and_prob) {
+    prob = prob / total_visit;
+  }
+
+  torch::Tensor policy = MoveToTensor(move_and_prob);
 
   // Return it as a 1d vector.
   return policy.flatten(0);
+}
+
+Move MCTS::MoveToMake() const {
+  std::optional<Move> best_move;
+  int max_visit = 0;
+
+  for (const auto& [child_node, move] : root_->Children()) {
+    if (child_node->Visit() > max_visit) {
+      max_visit = child_node->Visit();
+      best_move = move;
+    }
+  }
+
+  assert(best_move.has_value());
+  return best_move.value();
 }
 
 }  // namespace chess

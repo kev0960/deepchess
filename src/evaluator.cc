@@ -6,6 +6,10 @@
 namespace chess {
 
 float Evaluator::Evalulate(const GameState& state) {
+  if (state.IsDraw()) {
+    return 0;
+  }
+
   if (state.GetLegalMoves().empty()) {
     // If it is a checkmate, then it is done :(
     return -1;

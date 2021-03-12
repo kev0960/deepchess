@@ -48,6 +48,8 @@ class Board {
 
   bool IsEmptyAt(int row, int col) const;
 
+  bool IsCheck(PieceSide side) const;
+
   // Find the available moves of the piece at given location.
   std::vector<Move> GetMoveOfPieceAt(int row, int col) const;
   std::vector<Move> GetMoveOfPieceAt(std::string_view coord) const;

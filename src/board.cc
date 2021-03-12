@@ -85,6 +85,23 @@ Board DoCastling(const Board& board, Move m) {
   return next;
 }
 
+int FindKing(const Board& board, PieceSide color) {
+  int king_pos = 0;
+
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) {
+      if (board.PieceAt(i, j).Side() == color &&
+          board.PieceAt(i, j).Type() == KING) {
+        // TODO Find more generic way to match it to Move's To and From.
+        king_pos = i * 8 + j;
+        break;
+      }
+    }
+  }
+
+  return king_pos;
+}
+
 }  // namespace
 
 Board::Board() { board_.fill(0); }
@@ -146,17 +163,7 @@ std::vector<Move> Board::GetAvailableMoves(PieceSide who) const {
 std::vector<Move> Board::GetAvailableLegalMoves(PieceSide me) const {
   std::vector<Move> moves;
 
-  int king_pos = 0;
-
-  for (int i = 0; i < 8; i++) {
-    for (int j = 0; j < 8; j++) {
-      if (PieceAt(i, j).Side() == me && PieceAt(i, j).Type() == KING) {
-        // TODO Find more generic way to match it to Move's To and From.
-        king_pos = i * 8 + j;
-        break;
-      }
-    }
-  }
+  int king_pos = FindKing(*this, me);
 
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 8; j++) {
@@ -258,6 +265,17 @@ Board Board::DoMove(Move m) const {
     }
   }
 
+  // Check for En Passant if it was a diagonal move.
+  if (piece.Type() == PieceType::PAWN &&
+      std::abs(m.ToCoord().second - m.FromCoord().second) == 1) {
+    if (PieceAt(m.ToCoord()).Type() == PieceType::EMPTY) {
+      // Capture the passed pawn.
+      next.PutPieceAt(
+          m.ToCoord().first - (m.ToCoord().first - m.FromCoord().second),
+          m.ToCoord().second, Piece(" "));
+    }
+  }
+
   // Mark as empty.
   next.PutPieceAt(m.ToCoord(), piece);
   next.PutPieceAt(m.FromCoord(), Piece(" "));
@@ -306,6 +324,19 @@ bool Board::operator==(const Board& board) const {
 
 bool Board::operator!=(const Board& board) const {
   return board_ != board.board_;
+}
+
+bool Board::IsCheck(PieceSide color) const {
+  int king_pos = FindKing(*this, color);
+
+  auto moves = GetAvailableMoves(color == WHITE ? BLACK : WHITE);
+  for (auto m : moves) {
+    if (m.To() == king_pos) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 }  // namespace chess

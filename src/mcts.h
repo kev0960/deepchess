@@ -17,7 +17,10 @@ class MCTS {
 
   // Get the policy vector. Policy vector is the flattened 1d vector of 73 * 8
   // * 8 (= 1 * 4672).
-  torch::Tensor GetPolicyVector();
+  torch::Tensor GetPolicyVector() const;
+
+  // Return the move that corresponds to most visited node.
+  Move MoveToMake() const;
 
  private:
   // Select the node to expand.

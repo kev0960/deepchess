@@ -62,15 +62,35 @@ PieceSide GetOpponent(PieceSide side) {
   return PieceSide::WHITE;
 }
 
+// If the pawn has moved two squares, then return the position where the pawn
+// is.
+std::optional<std::pair<int, int>> DidPawnMoveTwoSquares(
+    const GameState* prev_state, Move move) {
+  if (prev_state == nullptr) {
+    return std::nullopt;
+  }
+
+  const Board& board = prev_state->GetBoard();
+  if (board.PieceAt(move.FromCoord()).Type() == PAWN &&
+      std::abs(move.ToCoord().first - move.FromCoord().first) == 2) {
+    return move.ToCoord();
+  }
+
+  return std::nullopt;
+}
+
 }  // namespace
 
-GameState::GameState(const Board& board, PieceSide who_is_moving)
+GameState::GameState(const Board& board, PieceSide who_is_moving,
+                     Move last_move)
     : current_board_(board),
+      last_move_(last_move),
       who_is_moving_(who_is_moving),
       prev_state_(nullptr) {}
 
 GameState::GameState(const GameState* prev_state, Move move)
     : current_board_(prev_state->GetBoard().DoMove(move)),
+      last_move_(move),
       who_is_moving_(GetOpponent(prev_state->WhoIsMoving())),
       white_castle_(prev_state->white_castle_),
       black_castle_(prev_state->black_castle_),
@@ -93,6 +113,8 @@ GameState::GameState(const GameState* prev_state, Move move)
   } else if (move.FromCoord() == std::make_pair(7, 4)) {
     white_castle_.king_moved = true;
   }
+
+  // TODO Consider the case when the rook is captured.
 }
 
 std::pair<bool, bool> GameState::ComputeCanWhiteCastle() const {
@@ -231,13 +253,19 @@ GameState GameState::CreateInitGameState() {
       {"p", {"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7"}},
   };
 
-  GameState state(Board{pieces}, /*who_is_moving=*/PieceSide::WHITE);
+  GameState state(Board{pieces}, /*who_is_moving=*/PieceSide::WHITE,
+                  Move(0, 0, 0, 0));
   return state;
 }
 
 GameState GameState::CreateGameStateForTesting(const Board& board,
-                                               PieceSide who_is_moving) {
-  GameState state(board, who_is_moving);
+                                               PieceSide who_is_moving,
+                                               Move last_move,
+                                               CastlingAvail white_castle,
+                                               CastlingAvail black_castle) {
+  GameState state(board, who_is_moving, last_move);
+  state.white_castle_ = white_castle;
+  state.black_castle_ = black_castle;
   return state;
 }
 
@@ -264,12 +292,49 @@ std::vector<Move> GameState::ComputeLegalMoves() const {
     }
   }
 
-  // TODO Handle Enpassant.
+  // Handle En Passant.
+  if (auto maybe_pawn = DidPawnMoveTwoSquares(prev_state_, last_move_);
+      maybe_pawn) {
+    auto [pawn_row, pawn_col] = maybe_pawn.value();
+    auto pawn = Piece(PAWN, who_is_moving_);
+
+    if (pawn_col - 1 >= 0 &&
+        current_board_.PieceAt(pawn_row, pawn_col - 1) == pawn) {
+      moves.push_back(Move(pawn_row, pawn_col - 1,
+                           pawn_row + (who_is_moving_ == WHITE ? -1 : 1),
+                           pawn_col));
+    }
+
+    if (pawn_col + 1 < 8 &&
+        current_board_.PieceAt(pawn_row, pawn_col + 1) == pawn) {
+      moves.push_back(Move(pawn_row, pawn_col + 1,
+                           pawn_row + (who_is_moving_ == WHITE ? -1 : 1),
+                           pawn_col));
+    }
+  }
+
   return moves;
 }
 
 std::vector<Move> GameState::GetLegalMoves() const {
   return legal_moves_.Get([this]() { return ComputeLegalMoves(); });
+}
+
+bool GameState::IsDraw() const {
+  if (RepititionCount() >= 3) {
+    return true;
+  }
+
+  if (NoProgressCount() >= 50) {
+    return true;
+  }
+
+  // Check for the stalemate.
+  if (!current_board_.IsCheck(who_is_moving_) && GetLegalMoves().empty()) {
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace chess

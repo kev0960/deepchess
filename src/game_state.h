@@ -19,7 +19,10 @@ class GameState {
   // Create the init game state.
   static GameState CreateInitGameState();
   static GameState CreateGameStateForTesting(
-      const Board& board, PieceSide who_is_moving = PieceSide::WHITE);
+      const Board& board, PieceSide who_is_moving = PieceSide::WHITE,
+      Move last_move = Move(0, 0, 0, 0),
+      CastlingAvail white_castle = CastlingAvail(),
+      CastlingAvail black_castle = CastlingAvail());
 
   GameState(const GameState* prev_state, Move move);
 
@@ -38,15 +41,20 @@ class GameState {
   // Get legal moves (the move that does not put King into check).
   std::vector<Move> GetLegalMoves() const;
 
+  bool IsDraw() const;
+
  private:
   // Should be only used by factory.
-  GameState(const Board& board, PieceSide who_is_moving);
+  GameState(const Board& board, PieceSide who_is_moving, Move last_move);
 
   std::vector<Move> ComputeLegalMoves() const;
   std::pair<bool, bool> ComputeCanWhiteCastle() const;
   std::pair<bool, bool> ComputeCanBlackCastle() const;
 
   Board current_board_;
+
+  // The move that was made in the previous state to construct current state.
+  Move last_move_;
 
   // The color that moved to reach this state.
   PieceSide who_is_moving_ = PieceSide::WHITE;

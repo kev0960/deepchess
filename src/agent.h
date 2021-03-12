@@ -11,7 +11,12 @@
 namespace chess {
 
 struct Experience {
-  torch::Tensor state_;
+  GameState* state = nullptr;
+  torch::Tensor policy;
+
+  // If the one who plays at this state wins, it should be 1. If lost, then -1.
+  // Draw is 0.
+  float result = 0;
 };
 
 class Agent {
