@@ -36,13 +36,15 @@ class GameState {
   int NoProgressCount() const { return no_progress_count_; }
 
   // Get legal moves (the move that does not put King into check).
-  std::vector<Move> GetLegalMoves() const ;
+  std::vector<Move> GetLegalMoves() const;
 
  private:
   // Should be only used by factory.
   GameState(const Board& board, PieceSide who_is_moving);
 
   std::vector<Move> ComputeLegalMoves() const;
+  std::pair<bool, bool> ComputeCanWhiteCastle() const;
+  std::pair<bool, bool> ComputeCanBlackCastle() const;
 
   Board current_board_;
 
@@ -50,6 +52,9 @@ class GameState {
   PieceSide who_is_moving_ = PieceSide::WHITE;
 
   CastlingAvail white_castle_, black_castle_;
+  mutable LazyGet<std::pair<bool, bool>> can_white_castle_;
+  mutable LazyGet<std::pair<bool, bool>> can_black_castle_;
+
   const GameState* prev_state_ = nullptr;
 
   // Repetition count. Includes the current state (so it always starts with 1).

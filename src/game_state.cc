@@ -95,7 +95,7 @@ GameState::GameState(const GameState* prev_state, Move move)
   }
 }
 
-std::pair<bool, bool> GameState::CanWhiteCastle() const {
+std::pair<bool, bool> GameState::ComputeCanWhiteCastle() const {
   if (white_castle_.king_moved) {
     return std::make_pair(false, false);
   }
@@ -151,7 +151,7 @@ std::pair<bool, bool> GameState::CanWhiteCastle() const {
   return std::make_pair(can_castle_king_side, can_castle_queen_side);
 }
 
-std::pair<bool, bool> GameState::CanBlackCastle() const {
+std::pair<bool, bool> GameState::ComputeCanBlackCastle() const {
   if (black_castle_.king_moved) {
     return std::make_pair(false, false);
   }
@@ -205,6 +205,14 @@ std::pair<bool, bool> GameState::CanBlackCastle() const {
   }
 
   return std::make_pair(can_castle_king_side, can_castle_queen_side);
+}
+
+std::pair<bool, bool> GameState::CanWhiteCastle() const {
+  return can_white_castle_.Get([this]() { return ComputeCanWhiteCastle(); });
+}
+
+std::pair<bool, bool> GameState::CanBlackCastle() const {
+  return can_black_castle_.Get([this]() { return ComputeCanBlackCastle(); });
 }
 
 GameState GameState::CreateInitGameState() {

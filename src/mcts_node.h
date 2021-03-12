@@ -10,7 +10,23 @@
 
 namespace chess {
 
-// Node of MCTS.
+// Node of MCTS. This node also contains the information about the branch that
+// leads from the parent state to the state that the node represents.
+// Picture is worth than words:
+//
+//           (Parent; state s)
+//                     /
+// ------------------------------------------
+// |                 /                      |
+// |                /  (s, a) <-- Branch    |
+// |               /                        | <-- MCTSNode
+// |              /                         |
+// |   (Current node; state s')             |
+// |                                        |
+// ------------------------------------------
+//
+// You can think above box is encoded in single MCTS Node. Thus, the Q(s,a) and
+// N(s,a) associated with the branch is also contained in this node.
 //
 // Note that each MCTS node *owns* the GameState that it represents.
 class MCTSNode {

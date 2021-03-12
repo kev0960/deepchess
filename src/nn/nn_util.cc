@@ -10,6 +10,15 @@ constexpr int kNumFeaturesPerHistory = 14;
 constexpr int kNumMaxHistory = 8;
 constexpr int kTotalNumFeatures = kNumFeaturesPerHistory * kNumMaxHistory + 7;
 
+constexpr int kQueenMoveN = 0;
+constexpr int kQueenMoveNE = 1 * 7;
+constexpr int kQueenMoveE = 2 * 7;
+constexpr int kQueenMoveSE = 3 * 7;
+constexpr int kQueenMoveS = 4 * 7;
+constexpr int kQueenMoveSW = 5 * 7;
+constexpr int kQueenMoveW = 6 * 7;
+constexpr int kQueenMoveNW = 7 * 7;
+
 // Create 12 * 8 * 8 tensor that encodes P1 piece and P2 piece.
 void SetPieceOnTensor(const Board& board, PieceSide me, int n_th,
                       torch::Tensor* tensor) {
@@ -114,6 +123,69 @@ int ComputeTensorSize(c10::IntArrayRef ref) {
   return total;
 }
 
+int GetMoveIndex(Move m) {
+  auto [from_row, from_col] = m.FromCoord();
+  auto [to_row, to_col] = m.ToCoord();
+
+  // Queen promotion is recored as a regular pawn move th last row.
+  if (m.GetPromotion() != NO_PROMOTE && m.GetPromotion() != PROMOTE_QUEEN) {
+    int diff = 1 + to_col - from_col;
+    switch (m.GetPromotion()) {
+      case PROMOTE_KNIGHT:
+        return 64 + diff;
+      case PROMOTE_BISHOP:
+        return 64 + 3 + diff;
+      case PROMOTE_ROOK:
+        return 64 + 6 + diff;
+      default:
+        // TODO Put assert false.
+        return -1;
+    }
+  }
+
+  // Diagonal Queen move.
+  if (std::abs(from_row - to_row) == std::abs(from_col - to_col)) {
+    int dist = std::abs(from_row - to_row) - 1;
+    if (from_col < to_col) {
+      if (from_row < to_row) {
+        return kQueenMoveSE + dist;
+      } else {
+        return kQueenMoveNE + dist;
+      }
+    } else {
+      if (from_row < to_row) {
+        return kQueenMoveSW + dist;
+      } else {
+        return kQueenMoveNW + dist;
+      }
+    }
+  } else if (from_row == to_row) {
+    // Horizontal Queen move.
+    if (from_col < to_col) {
+      return kQueenMoveE + (to_col - from_col - 1);
+    } else {
+      return kQueenMoveW + (from_col - to_col - 1);
+    }
+  } else if (from_col == to_col) {
+    // Vertical Queen move.
+    if (from_row < to_row) {
+      return kQueenMoveS + (to_row - from_row - 1);
+    } else {
+      return kQueenMoveN + (from_row - to_row - 1);
+    }
+  }
+
+  // Otherwise it is a knight move.
+  static int knight_arr[5][2] = {{0, 1}, {2, 3}, {0, 0}, {4, 5}, {6, 7}};
+
+  return 56 + knight_arr[to_row - from_row + 2][to_col > from_col ? 0 : 1];
+}
+
+void SetPolicyTensor(Move m, float prob, torch::Tensor* tensor) {
+  auto [from_row, from_col] = m.FromCoord();
+  tensor->index_put_({GetMoveIndex(m), from_row, from_col}, prob);
+}
+
 }  // namespace
 
 // Needs 8 previous board states. (Newest is the last element).
@@ -147,6 +219,16 @@ int GetModelNumParams(const torch::nn::Module& m) {
   }
 
   return total_params;
+}
+
+torch::Tensor MoveToTensor(std::vector<std::pair<Move, float>> move_and_prob) {
+  torch::Tensor policy = torch::zeros({73, 8, 8});
+
+  for (auto& [m, p] : move_and_prob) {
+    SetPolicyTensor(m, p, &policy);
+  }
+
+  return policy;
 }
 
 }  // namespace chess

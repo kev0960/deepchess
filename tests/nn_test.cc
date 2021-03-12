@@ -192,6 +192,145 @@ TEST(GameStateToTensorTest, Castling) {
   EXPECT_TRUE(tensor.index({117}).equal(torch::full({8, 8}, 0.f)));
 }
 
+TEST(MoveToTensorTest, QueenMoveDiagonal) {
+  torch::Tensor tensor = MoveToTensor({{Move(4, 4, 0, 0), 0.1},
+                                       {Move(4, 4, 2, 6), 0.2},
+                                       {Move(4, 4, 5, 5), 0.3},
+                                       {Move(4, 4, 7, 1), 0.4}});
+  float board[] = {
+      0, 0, 0, 0, 0, 0, 0, 0,  // 8
+      0, 0, 0, 0, 0, 0, 0, 0,  // 7
+      0, 0, 0, 0, 0, 0, 0, 0,  // 6
+      0, 0, 0, 0, 0, 0, 0, 0,  // 5
+      0, 0, 0, 0, 0, 0, 0, 0,  // 4
+      0, 0, 0, 0, 0, 0, 0, 0,  // 3
+      0, 0, 0, 0, 0, 0, 0, 0,  // 2
+      0, 0, 0, 0, 0, 0, 0, 0   // 1
+  };
+
+  board[8 * 4 + 4] = 0.1;
+  EXPECT_TRUE(tensor.index({7 * 7 + 3}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.2;
+  EXPECT_TRUE(tensor.index({7 * 1 + 1}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.3;
+  EXPECT_TRUE(tensor.index({7 * 3 + 0}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.4;
+  EXPECT_TRUE(tensor.index({7 * 5 + 2}).equal(torch::from_blob(board, {8, 8})));
+}
+
+TEST(MoveToTensorTest, QueenMoveVerticalAndHorizontal) {
+  torch::Tensor tensor = MoveToTensor({{Move(4, 4, 4, 0), 0.1},
+                                       {Move(4, 4, 4, 7), 0.2},
+                                       {Move(4, 4, 2, 4), 0.3},
+                                       {Move(4, 4, 5, 4), 0.4}});
+  float board[] = {
+      0, 0, 0, 0, 0, 0, 0, 0,  // 8
+      0, 0, 0, 0, 0, 0, 0, 0,  // 7
+      0, 0, 0, 0, 0, 0, 0, 0,  // 6
+      0, 0, 0, 0, 0, 0, 0, 0,  // 5
+      0, 0, 0, 0, 0, 0, 0, 0,  // 4
+      0, 0, 0, 0, 0, 0, 0, 0,  // 3
+      0, 0, 0, 0, 0, 0, 0, 0,  // 2
+      0, 0, 0, 0, 0, 0, 0, 0   // 1
+  };
+
+  board[8 * 4 + 4] = 0.1;
+  EXPECT_TRUE(tensor.index({7 * 6 + 3}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.2;
+  EXPECT_TRUE(tensor.index({7 * 2 + 2}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.3;
+  EXPECT_TRUE(tensor.index({7 * 0 + 1}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.4;
+  EXPECT_TRUE(tensor.index({7 * 4 + 0}).equal(torch::from_blob(board, {8, 8})));
+}
+
+TEST(MoveToTensorTest, KnightMove) {
+  // NOTE: probability should sum to 1 but let's just allow it for test's sake.
+  torch::Tensor tensor = MoveToTensor({{Move(4, 4, 2, 5), 0.1},
+                                       {Move(4, 4, 3, 6), 0.2},
+                                       {Move(4, 4, 5, 6), 0.3},
+                                       {Move(4, 4, 6, 5), 0.4},
+                                       {Move(4, 4, 6, 3), 0.5},
+                                       {Move(4, 4, 5, 2), 0.6},
+                                       {Move(4, 4, 3, 2), 0.7},
+                                       {Move(4, 4, 2, 3), 0.8}});
+  float board[] = {
+      0, 0, 0, 0, 0, 0, 0, 0,  // 8
+      0, 0, 0, 0, 0, 0, 0, 0,  // 7
+      0, 0, 0, 0, 0, 0, 0, 0,  // 6
+      0, 0, 0, 0, 0, 0, 0, 0,  // 5
+      0, 0, 0, 0, 0, 0, 0, 0,  // 4
+      0, 0, 0, 0, 0, 0, 0, 0,  // 3
+      0, 0, 0, 0, 0, 0, 0, 0,  // 2
+      0, 0, 0, 0, 0, 0, 0, 0   // 1
+  };
+
+  board[8 * 4 + 4] = 0.1;
+  EXPECT_TRUE(tensor.index({7 * 8 + 0}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.2;
+  EXPECT_TRUE(tensor.index({7 * 8 + 2}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.3;
+  EXPECT_TRUE(tensor.index({7 * 8 + 4}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.4;
+  EXPECT_TRUE(tensor.index({7 * 8 + 6}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.5;
+  EXPECT_TRUE(tensor.index({7 * 8 + 7}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.6;
+  EXPECT_TRUE(tensor.index({7 * 8 + 5}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.7;
+  EXPECT_TRUE(tensor.index({7 * 8 + 3}).equal(torch::from_blob(board, {8, 8})));
+
+  board[8 * 4 + 4] = 0.8;
+  EXPECT_TRUE(tensor.index({7 * 8 + 1}).equal(torch::from_blob(board, {8, 8})));
+}
+
+TEST(MoveToTensorTest, PawnPromotion) {
+  torch::Tensor tensor = MoveToTensor({{Move(6, 4, 7, 3, PROMOTE_QUEEN), 0.1},
+                                       {Move(6, 4, 7, 4, PROMOTE_QUEEN), 0.2},
+                                       {Move(6, 4, 7, 5, PROMOTE_QUEEN), 0.3},
+                                       {Move(6, 4, 7, 3, PROMOTE_BISHOP), 0.4},
+                                       {Move(6, 4, 7, 4, PROMOTE_BISHOP), 0.5},
+                                       {Move(6, 4, 7, 5, PROMOTE_BISHOP), 0.6},
+                                       {Move(6, 4, 7, 3, PROMOTE_KNIGHT), 0.7},
+                                       {Move(6, 4, 7, 4, PROMOTE_KNIGHT), 0.8},
+                                       {Move(6, 4, 7, 5, PROMOTE_KNIGHT), 0.9},
+                                       {Move(6, 4, 7, 3, PROMOTE_ROOK), 1},
+                                       {Move(6, 4, 7, 4, PROMOTE_ROOK), 1.1},
+                                       {Move(6, 4, 7, 5, PROMOTE_ROOK), 1.2}});
+
+  float board[] = {
+      0, 0, 0, 0, 0, 0, 0, 0,  // 8
+      0, 0, 0, 0, 0, 0, 0, 0,  // 7
+      0, 0, 0, 0, 0, 0, 0, 0,  // 6
+      0, 0, 0, 0, 0, 0, 0, 0,  // 5
+      0, 0, 0, 0, 0, 0, 0, 0,  // 4
+      0, 0, 0, 0, 0, 0, 0, 0,  // 3
+      0, 0, 0, 0, 0, 0, 0, 0,  // 2
+      0, 0, 0, 0, 0, 0, 0, 0   // 1
+  };
+
+  int indices[] = {7 * 5,  7 * 4,  7 * 3,  67 + 0, 67 + 1, 67 + 2,
+                   64 + 0, 64 + 1, 64 + 2, 70 + 0, 70 + 1, 70 + 2};
+
+  for (int i = 1; i <= 12; i++) {
+    board[8 * 6 + 4] = 0.1 * i;
+    EXPECT_TRUE(
+        tensor.index({indices[i - 1]}).equal(torch::from_blob(board, {8, 8})));
+  }
+}
+
 TEST(ChessNNTest, ChessNN) {
   ChessNN model(152, 119);
 

@@ -45,9 +45,8 @@ MCTSNode* MCTS::Select() {
         break;
       }
 
-      // Since the node->Q() is computed from the perspective of opponent
-      // player, we have to negate the returned Q to convert it to the
-      // perspective of the current player.
+      // Compute Q(s,a) + U(s,a). Note that the state "node" represents is s',
+      // not s.
       float q_plus_u = node->PUCT(current->Visit()) + node->Q();
       if (max_elem == nullptr || q_plus_u > max_score) {
         max_elem = node;
@@ -96,7 +95,7 @@ void MCTS::Backup(MCTSNode* leaf_node) {
   }
 }
 
-torch::Tensor GetPolicyVector() {
+torch::Tensor MCTS::GetPolicyVector() {
   torch::Tensor policy = torch::zeros({73, 8, 8});
 
   // Return it as a 1d vector.
