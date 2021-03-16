@@ -197,6 +197,18 @@ std::string Board::PrintBoard(char empty) const {
   return board;
 }
 
+void Board::PrettyPrintBoard() const {
+  fmt::print("+---+---+---+---+---+---+---+---+\n");
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      fmt::print("| {} ", PieceAt(row, col).Print());
+    }
+    fmt::print("| {}\n", 8 - row);
+    fmt::print("+---+---+---+---+---+---+---+---+\n");
+  }
+  fmt::print(" a   b   c   d   e   f   g   h\n");
+}
+
 std::string Board::PrintNumericBoard() const {
   std::string b;
   for (size_t i = 0; i < board_.size(); i++) {

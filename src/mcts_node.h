@@ -61,6 +61,12 @@ class MCTSNode {
   // Value estimate of the current state.
   float V() const;
 
+  float Prior() const;
+
+  void DumpDebugInfo() const;
+
+  bool Computed() const { return computed_; }
+
  private:
   // State.
   std::unique_ptr<GameState> state_;
@@ -72,6 +78,7 @@ class MCTSNode {
 
   // Value of this node estimated by the neural net.
   float v_;
+  bool computed_ = false;
 
   // Prior probability.
   float prior_;

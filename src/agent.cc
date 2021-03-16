@@ -5,14 +5,13 @@
 namespace chess {
 namespace {
 
-constexpr int kTotalNumIter = 1000;
-constexpr int kMaxGameMoves = 1000;
+constexpr int kMaxGameMoves = 300;
+constexpr int kMCTSNumIter = 1000;
 
-std::pair<Experience, Move> GetMove(GameState* current, Evaluator* evaluator) {
-  MCTS mcts(current, evaluator);
-  for (int i = 0; i < kTotalNumIter; i++) {
-    mcts.RunMCTS();
-  }
+std::pair<Experience, Move> GetMove(GameState* current, Evaluator* evaluator,
+                                    DirichletDistribution* dirichlet) {
+  MCTS mcts(current, evaluator, dirichlet);
+  mcts.RunMCTS(kMCTSNumIter);
 
   Move best_move = mcts.MoveToMake();
   torch::Tensor policy = mcts.GetPolicyVector();
@@ -22,50 +21,66 @@ std::pair<Experience, Move> GetMove(GameState* current, Evaluator* evaluator) {
 
 }  // namespace
 
-Agent::Agent() : nn_(50, 117) {}
+Agent::Agent(ChessNN nn, DirichletDistribution* dirichlet,
+             DeviceManager* device_manager)
+    : nn_(nn), dirichlet_(dirichlet), device_manager_(device_manager) {}
 
-void Agent::Run() {
-  for (int num_iter = 0; num_iter < kTotalNumIter; num_iter++) {
-    DoSelfPlay();
-  }
-}
+void Agent::Run() { DoSelfPlay(); }
 
 void Agent::DoSelfPlay() {
-  std::vector<std::unique_ptr<GameState>> current_game_states;
-  std::vector<std::unique_ptr<Experience>> current_experiences;
-
   // Generate experiences.
-  current_game_states.push_back(
+  states_.push_back(
       std::make_unique<GameState>(GameState::CreateInitGameState()));
 
-  Evaluator evaluator(&nn_);
+  Evaluator evaluator(nn_, device_manager_);
 
   int num_move = 0;
   while (num_move < kMaxGameMoves) {
-    GameState* current = current_game_states.back().get();
+    GameState* current = states_.back().get();
 
     // Checkmate! Game is over :)
     if (current->GetLegalMoves().empty()) {
       break;
     }
 
-    auto [experience, move] = GetMove(current, &evaluator);
-    current_experiences.push_back(std::make_unique<Experience>(experience));
+    auto [experience, move] = GetMove(current, &evaluator, dirichlet_);
+    experiences_.push_back(std::make_unique<Experience>(experience));
 
-    current_game_states.push_back(std::make_unique<GameState>(current, move));
+    states_.push_back(std::make_unique<GameState>(current, move));
     num_move++;
+
+    states_.back()->GetBoard().PrettyPrintBoard();
   }
 
-  GameState* last_state = current_game_states.back().get();
+  if (num_move == kMaxGameMoves) {
+    // This is draw.
+    fmt::print("Game Is Over! : DRAW");
+    states_.back()->GetBoard().PrettyPrintBoard();
+    return;
+  }
+
+  GameState* last_state = states_.back().get();
   PieceSide loser = last_state->WhoIsMoving();
 
-  for (const auto& experience : current_experiences) {
+  fmt::print("Game Is Over! : WHITE WIN? {}", loser == BLACK);
+  last_state->GetBoard().PrettyPrintBoard();
+
+  for (const auto& experience : experiences_) {
     if (experience->state->WhoIsMoving() == loser) {
       experience->result = -1;
     } else {
       experience->result = 1;
     }
   }
+}
+
+Move Agent::GetBestMove(const GameState& game_state, int num_mcts_iter) const {
+  Evaluator evaluator(nn_, device_manager_);
+
+  MCTS mcts(&game_state, &evaluator, dirichlet_);
+  mcts.RunMCTS(num_mcts_iter);
+
+  return mcts.MoveToMake();
 }
 
 }  // namespace chess

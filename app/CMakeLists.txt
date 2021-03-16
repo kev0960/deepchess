@@ -1,4 +1,3 @@
-
 add_executable(chess main.cc)
 target_compile_features(chess PRIVATE cxx_std_17)
 

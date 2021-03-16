@@ -170,6 +170,8 @@ r...k..r
 ....B...
 ....K..R
 )"));
+
+  b.PrettyPrintBoard();
 }
 
 

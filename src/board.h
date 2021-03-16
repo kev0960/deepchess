@@ -37,6 +37,7 @@ class Board {
 
   // Print the board.
   std::string PrintBoard(char empty = ' ') const;
+  void PrettyPrintBoard() const;
   std::string PrintNumericBoard() const;
 
   // Put piece at specified coord.

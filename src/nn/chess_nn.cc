@@ -2,30 +2,49 @@
 
 namespace chess {
 
-ChessNN::ChessNN(int num_layer, int num_filter) {
+// Number of 8*8 planes in the input state.
+constexpr int kStateSize = 119;
+constexpr int kNumFilters = 50;
+
+ChessNNImpl::ChessNNImpl(int num_layer) {
+  conv_input_to_block_ = register_module(
+      "conv_input_to_block",
+      torch::nn::Conv2d(torch::nn::Conv2dOptions(kStateSize, kNumFilters, 3)
+                            .stride(1)
+                            .padding(1)));
+
+  layers_->push_back(conv_input_to_block_);
+
   for (int i = 0; i < num_layer; i++) {
     layers_->push_back(register_module("nn_block_" + std::to_string(i),
-                                       ChessNNBlock(num_filter)));
+                                       ChessNNBlock(kNumFilters)));
   }
 
   register_module("chess_net", layers_);
 
   conv_policy_ = register_module(
       "conv_policy",
-      torch::nn::Conv2d(
-          torch::nn::Conv2dOptions(num_filter, 73, {3, 3}).stride(1)));
+      torch::nn::Conv2d(torch::nn::Conv2dOptions(kNumFilters, 73, {3, 3})
+                            .stride(1)
+                            .padding(1)));
   fc_policy_ =
       register_module("fc_policy", torch::nn::Linear(73 * 8 * 8, 73 * 8 * 8));
 
   conv_value_ = register_module(
       "conv_value",
-      torch::nn::Conv2d(
-          torch::nn::Conv2dOptions(num_filter, 32, {3, 3}).stride(1)));
+      torch::nn::Conv2d(torch::nn::Conv2dOptions(kNumFilters, 32, {3, 3})
+                            .stride(1)
+                            .padding(1)));
 
   fc_value_ = register_module("fc_value", torch::nn::Linear(32 * 8 * 8, 1));
 }
 
-torch::Tensor ChessNN::GetPolicy(torch::Tensor state) {
+torch::Tensor ChessNNImpl::GetPolicy(torch::Tensor state) {
+  // If the state is [*, *, *], then make it as [1, *, *, *].
+  if (state.sizes().size() == 3) {
+    state = state.unsqueeze(0);
+  }
+
   auto x = layers_->forward(state);
 
   // policy : N * 73 * 8 * 8
@@ -39,7 +58,12 @@ torch::Tensor ChessNN::GetPolicy(torch::Tensor state) {
   return policy;
 }
 
-torch::Tensor ChessNN::GetValue(torch::Tensor state) {
+torch::Tensor ChessNNImpl::GetValue(torch::Tensor state) {
+  // If the state is [*, *, *], then make it as [1, *, *, *].
+  if (state.sizes().size() == 3) {
+    state = state.unsqueeze(0);
+  }
+
   auto x = layers_->forward(state);
 
   // value : N * 32 * 8 * 8

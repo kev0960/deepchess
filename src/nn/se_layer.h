@@ -1,11 +1,12 @@
 #include <torch/torch.h>
+#include <fmt/core.h>
 
 namespace chess {
 
 class SqueezeLayerImpl : public torch::nn::Module {
  public:
   SqueezeLayerImpl(int num_channel, int reduction) {
-    torch::nn::AvgPool2dOptions options({3, 4});
+    assert(num_channel / reduction * reduction == num_channel);
 
     avg_pool_ = register_module(
         "avgpool2d", torch::nn::AvgPool2d(torch::nn::AvgPool2dOptions({8, 8})));

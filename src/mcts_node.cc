@@ -1,5 +1,7 @@
 #include "mcts_node.h"
 
+#include <fmt/core.h>
+
 #include <cmath>
 
 namespace chess {
@@ -18,7 +20,10 @@ void MCTSNode::UpdateQ(float value) {
   n_s_a_ += 1;
 }
 
-void MCTSNode::SetValueOfThisState(float value) { v_ = value; }
+void MCTSNode::SetValueOfThisState(float value) {
+  v_ = value;
+  computed_ = true;
+}
 
 void MCTSNode::AddChildNode(MCTSNode* node, const Move& move) {
   next_state_actions_.push_back(std::make_pair(node, move));
@@ -41,5 +46,20 @@ int MCTSNode::Visit() const { return n_s_a_; }
 float MCTSNode::Q() const { return w_s_a_ / n_s_a_; }
 
 float MCTSNode::V() const { return v_; }
+
+float MCTSNode::Prior() const { return prior_; }
+
+void MCTSNode::DumpDebugInfo() const {
+  if (n_s_a_ != 0) {
+    fmt::print(
+        "W(s,a)=[{}] N(s,a)=[{}] Q(s,a)=[{}] Value=[{}] Prior=[{}] "
+        "Computed=[{}]\n",
+        w_s_a_, n_s_a_, w_s_a_ / n_s_a_, v_, prior_, computed_);
+  } else {
+    fmt::print(
+        "W(s,a)=[{}] N(s,a)=[{}] Value=[{}] Prior=[{}] Computed=[{}]\n",
+        w_s_a_, n_s_a_, v_, prior_, computed_);
+  }
+}
 
 }  // namespace chess

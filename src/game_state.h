@@ -28,6 +28,7 @@ class GameState {
 
   const Board& GetBoard() const { return current_board_; }
   const GameState* PrevState() const { return prev_state_; }
+  const Move& LastMove() const { return last_move_; }
   PieceSide WhoIsMoving() const { return who_is_moving_; }
 
   // Returns (O-O, O-O-O)

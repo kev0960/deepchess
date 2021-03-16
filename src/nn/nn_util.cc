@@ -209,12 +209,13 @@ torch::Tensor GameStateToTensor(const GameState& current_state) {
   }
 
   SetAuxiliaryData(current_state, current_state.WhoIsMoving(), &tensor);
+
   return tensor;
 }
 
-int GetModelNumParams(const torch::nn::Module& m) {
+int GetModelNumParams(ChessNN m) {
   int total_params = 0;
-  for (auto& item : m.named_parameters()) {
+  for (auto& item : m->named_parameters()) {
     total_params += ComputeTensorSize(item.value().sizes());
   }
 

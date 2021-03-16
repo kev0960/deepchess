@@ -1,5 +1,6 @@
 #include <fmt/core.h>
 
+#include <chrono>
 #include <iostream>
 
 #include "gmock/gmock.h"
@@ -331,8 +332,84 @@ TEST(MoveToTensorTest, PawnPromotion) {
   }
 }
 
+TEST(ChessNNTest, BenchmarkTime) {
+  torch::Device device(torch::kCUDA);
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  for (int i = 0; i < 1000; i++) {
+    auto init = GameStateToTensor(GameState::CreateInitGameState());
+    init = init.to(device);
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "Time for constructing game state : "
+            << ms.count() / 1000.0 / 1000.0 << "ms" << std::endl;
+}
+
+TEST(ChessNNTest, BenchmarkBatchTime) {
+  torch::Device device(torch::kCUDA);
+  ChessNN model(10);
+  model->to(device);
+
+  GameStateBuilder builder;
+  builder
+      .DoMove(Move(7, 1, 5, 2))  // Nb3
+      .DoMove(Move(0, 1, 2, 2))  // Nc6
+      .DoMove(Move(5, 2, 7, 1))
+      .DoMove(Move(2, 2, 0, 1));
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  for (int i = 0; i < 200; i++) {
+    auto v1 = GameStateToTensor(*builder.GetStates()[0]);
+    auto v2 = GameStateToTensor(*builder.GetStates()[1]);
+    auto v3 = GameStateToTensor(*builder.GetStates()[2]);
+    auto v4 = GameStateToTensor(*builder.GetStates()[3]);
+    auto v5 = GameStateToTensor(*builder.GetStates()[4]);
+
+    torch::Tensor batch = torch::stack({v1, v2, v3, v4, v5});
+    batch = batch.to(device);
+    model->GetValue(batch);
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "Time for 5 batch : " << ms.count() / 1000.0 << "ms"
+            << std::endl;
+}
+
+TEST(ChessNNTest, InferenceTime) {
+  torch::Device device(torch::kCUDA);
+  ChessNN model(10);
+  model->to(device);
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  for (int i = 0; i < 1000; i++) {
+    auto init = GameStateToTensor(GameState::CreateInitGameState());
+    init = init.to(device);
+    model->GetValue(init);
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "Time for Inferencing : " << ms.count() / 1000.0 << "ms"
+            << std::endl;
+}
+
 TEST(ChessNNTest, ChessNN) {
-  ChessNN model(152, 119);
+  DeviceManager device_manager;
+  ChessNN model(152);
+
+  torch::Device device(torch::kCUDA);
+  model->to(device);
+
+  auto init = GameStateToTensor(GameState::CreateInitGameState());
+  init = init.to(device);
+
+  model->GetValue(init);
 
   fmt::print("Total : {} {}MB\n", GetModelNumParams(model),
              GetModelNumParams(model) * 4 / 1024.f / 1024.f);

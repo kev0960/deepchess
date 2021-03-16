@@ -5,6 +5,8 @@
 
 #include <vector>
 
+#include "device.h"
+#include "dirichlet.h"
 #include "game_state.h"
 #include "nn/chess_nn.h"
 
@@ -21,17 +23,28 @@ struct Experience {
 
 class Agent {
  public:
-  Agent();
+  Agent(ChessNN nn, DirichletDistribution* dirichlet,
+        DeviceManager* device_manager);
 
   // Conduct the self play and gain experiences.
   void Run();
-  void DoSelfPlay();
+
+  // No const since it has to be shuffled.
+  std::vector<std::unique_ptr<Experience>>& GetExperience() {
+    return experiences_;
+  }
+
+  Move GetBestMove(const GameState& game_state, int num_mcts_iter) const;
 
  private:
+  void DoSelfPlay();
+
   std::vector<std::unique_ptr<Experience>> experiences_;
   std::vector<std::unique_ptr<GameState>> states_;
 
   ChessNN nn_;
+  DirichletDistribution* dirichlet_;
+  DeviceManager* device_manager_;
 };
 
 }  // namespace chess
