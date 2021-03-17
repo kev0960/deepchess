@@ -9,7 +9,7 @@ Piece::Piece(std::string_view piece) {
 
   info_ = 0;
 
-  PieceType type;
+  PieceType type = EMPTY;
   switch (std::tolower(ch)) {
     case 'p':
       type = PAWN;

@@ -223,13 +223,6 @@ Move MCTS::MoveToMake() const {
     }
   }
 
-  if (!best_move.has_value()) {
-    root_->State().GetBoard().PrettyPrintBoard();
-    fmt::print("Very Weird!");
-    DumpDebugInfo();
-    std::cout << std::endl;
-    assert(best_move.has_value());
-  }
   return best_move.value();
 }
 

@@ -18,25 +18,30 @@ void ShuffleVector(std::vector<std::unique_ptr<Experience>>& exp) {
   std::shuffle(exp.begin(), exp.end(), rng);
 }
 
-// torch::Tensor NormalizePolicy(const GameState& game_state,
-//                               torch::Tensor policy) {
-//   torch::Tensor normalized = policy.to();
-// }
-
 }  // namespace
 
 void Train::DoTrain(int num_threads) {
-  (void) num_threads;
+  (void)num_threads;
   torch::save(current_best_, "CurrentBest.pt");
 
   std::vector<std::thread> exp_generators;
-  for (int i = 0; i < 8; i ++) {
+  for (int i = 0; i < 8; i++) {
     exp_generators.push_back(std::thread(&Train::GenerateExperience, this));
   }
 
   for (auto& gen : exp_generators) {
     gen.join();
   }
+
+  std::cout << "Num exps : " << experiences_.size() << std::endl;
+
+  ChessNN train_target(10);
+  torch::load(train_target, "CurrentBest.pt");
+  train_target->to(device_manager_->Device());
+
+  TrainNN(train_target);
+
+  std::cout << "Is train better? " << IsTrainedBetter(train_target) << std::endl;
 }
 
 void Train::GenerateExperience() {
@@ -70,10 +75,15 @@ void Train::TrainNN(ChessNN train_target) {
       torch::optim::AdamOptions(2e-4).weight_decay(1e-4));
   for (const auto& exp : experiences_) {
     torch::Tensor state_tensor = GameStateToTensor(*exp->state);
+    state_tensor = state_tensor.to(device_manager_->Device());
+
     train_target->zero_grad();
 
     torch::Tensor value = train_target->GetValue(state_tensor);
-    torch::Tensor policy = train_target->GetPolicy(state_tensor);
+
+    // We have to zero-out the probability for impossible actions. 
+    torch::Tensor policy =
+        NormalizePolicy(*exp->state, train_target->GetPolicy(state_tensor));
 
     torch::Tensor total_loss =
         torch::binary_cross_entropy(policy, exp->policy) +

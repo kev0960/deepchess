@@ -415,6 +415,44 @@ TEST(ChessNNTest, ChessNN) {
              GetModelNumParams(model) * 4 / 1024.f / 1024.f);
 }
 
+TEST(ChessNNTest, NormalizePolicy) {
+  torch::Tensor policy = torch::ones({1, 73, 8, 8});
+  policy = policy.flatten(1);
+
+  GameState init = GameState::CreateInitGameState();
+  auto normalized = NormalizePolicy(init, policy);
+
+  normalized = normalized.reshape({73, 8, 8});
+
+  float pawn[] = {
+      0,    0,    0,    0,    0,    0,    0,    0,     // 8
+      0,    0,    0,    0,    0,    0,    0,    0,     // 7
+      0,    0,    0,    0,    0,    0,    0,    0,     // 6
+      0,    0,    0,    0,    0,    0,    0,    0,     // 5
+      0,    0,    0,    0,    0,    0,    0,    0,     // 4
+      0,    0,    0,    0,    0,    0,    0,    0,     // 3
+      0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05,  // 2
+      0,    0,    0,    0,    0,    0,    0,    0      // 1
+  };
+
+  EXPECT_TRUE(normalized.index({0}).equal(torch::from_blob(pawn, {8, 8})));
+  EXPECT_TRUE(normalized.index({1}).equal(torch::from_blob(pawn, {8, 8})));
+
+  float knight[] = {
+      0, 0,    0, 0, 0, 0, 0,    0,  // 8
+      0, 0,    0, 0, 0, 0, 0,    0,  // 7
+      0, 0,    0, 0, 0, 0, 0,    0,  // 6
+      0, 0,    0, 0, 0, 0, 0,    0,  // 5
+      0, 0,    0, 0, 0, 0, 0,    0,  // 4
+      0, 0,    0, 0, 0, 0, 0,    0,  // 3
+      0, 0,    0, 0, 0, 0, 0,    0,  // 2
+      0, 0.05, 0, 0, 0, 0, 0.05, 0   // 1
+  };
+
+  EXPECT_TRUE(normalized.index({56}).equal(torch::from_blob(knight, {8, 8})));
+  EXPECT_TRUE(normalized.index({57}).equal(torch::from_blob(knight, {8, 8})));
+}
+
 }  // namespace
 }  // namespace chess
 

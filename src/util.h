@@ -23,6 +23,8 @@ class LazyGet {
   T data_;
 };
 
+void PrintStackTrace();
+
 }  // namespace chess
 
 #endif

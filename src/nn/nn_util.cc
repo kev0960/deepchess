@@ -180,7 +180,6 @@ int GetMoveIndex(Move m) {
 
   return 56 + knight_arr[to_row - from_row + 2][to_col > from_col ? 0 : 1];
 }
-
 void SetPolicyTensor(Move m, float prob, torch::Tensor* tensor) {
   auto [from_row, from_col] = m.FromCoord();
   tensor->index_put_({GetMoveIndex(m), from_row, from_col}, prob);
@@ -232,4 +231,19 @@ torch::Tensor MoveToTensor(std::vector<std::pair<Move, float>> move_and_prob) {
   return policy;
 }
 
+torch::Tensor NormalizePolicy(const GameState& game_state,
+                              torch::Tensor policy) {
+  std::vector<std::pair<Move, float>> move_and_prob_for_mask;
+  for (const auto& move : game_state.GetLegalMoves()) {
+    move_and_prob_for_mask.push_back(std::make_pair(move, 1));
+  }
+
+  torch::Tensor mask = MoveToTensor(move_and_prob_for_mask);
+  mask = mask.to(policy.device());
+  mask = mask.unsqueeze(0).flatten(1);
+
+  policy = policy * mask;
+  policy = policy / torch::sum(policy);
+  return policy;
+}
 }  // namespace chess

@@ -206,7 +206,7 @@ void Board::PrettyPrintBoard() const {
     fmt::print("| {}\n", 8 - row);
     fmt::print("+---+---+---+---+---+---+---+---+\n");
   }
-  fmt::print(" a   b   c   d   e   f   g   h\n");
+  fmt::print("  a   b   c   d   e   f   g   h\n");
 }
 
 std::string Board::PrintNumericBoard() const {

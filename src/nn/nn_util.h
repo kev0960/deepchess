@@ -18,6 +18,10 @@ torch::Tensor MoveToTensor(std::vector<std::pair<Move, float>> move_and_prob);
 
 int GetModelNumParams(ChessNN m);
 
+// From the given policy vector, we have to mask out the impossible actions.
+torch::Tensor NormalizePolicy(const GameState& game_state,
+                              torch::Tensor policy);
+
 }  // namespace chess
 
 #endif

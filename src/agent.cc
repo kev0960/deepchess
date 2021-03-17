@@ -1,5 +1,7 @@
 #include "agent.h"
 
+#include <thread>
+
 #include "mcts.h"
 
 namespace chess {
@@ -43,26 +45,31 @@ void Agent::DoSelfPlay() {
       break;
     }
 
+    if (current->IsDraw()) {
+      break;
+    }
+
     auto [experience, move] = GetMove(current, &evaluator, dirichlet_);
     experiences_.push_back(std::make_unique<Experience>(experience));
 
     states_.push_back(std::make_unique<GameState>(current, move));
     num_move++;
 
+    std::cout << std::this_thread::get_id() << " -----\n";
     states_.back()->GetBoard().PrettyPrintBoard();
   }
 
-  if (num_move == kMaxGameMoves) {
+  GameState* last_state = states_.back().get();
+  if (num_move == kMaxGameMoves || last_state->IsDraw()) {
     // This is draw.
-    fmt::print("Game Is Over! : DRAW");
+    fmt::print("Game Is Over! : DRAW \n");
     states_.back()->GetBoard().PrettyPrintBoard();
     return;
   }
 
-  GameState* last_state = states_.back().get();
   PieceSide loser = last_state->WhoIsMoving();
 
-  fmt::print("Game Is Over! : WHITE WIN? {}", loser == BLACK);
+  fmt::print("Game Is Over! : WHITE WIN? {} \n", loser == BLACK);
   last_state->GetBoard().PrettyPrintBoard();
 
   for (const auto& experience : experiences_) {
