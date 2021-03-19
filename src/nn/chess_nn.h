@@ -2,7 +2,6 @@
 #define NN_CHESS_NN_H
 
 #include "chess_block.h"
-#include "device.h"
 
 namespace chess {
 

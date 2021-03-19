@@ -22,6 +22,10 @@ class GameStateBuilder {
     return states_;
   }
 
+  std::unique_ptr<GameState> ReleaseStateAt(int i) {
+    return std::move(states_[i]);
+  }
+
  private:
   std::vector<std::unique_ptr<GameState>> states_;
 };

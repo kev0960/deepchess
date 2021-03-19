@@ -5,7 +5,7 @@
 
 #include <vector>
 
-#include "device.h"
+#include "config.h"
 #include "dirichlet.h"
 #include "game_state.h"
 #include "nn/chess_nn.h"
@@ -13,38 +13,40 @@
 namespace chess {
 
 struct Experience {
-  GameState* state = nullptr;
+  std::unique_ptr<GameState> state;
   torch::Tensor policy;
 
   // If the one who plays at this state wins, it should be 1. If lost, then -1.
   // Draw is 0.
   float result = 0;
+
+  Experience(std::unique_ptr<GameState> state, torch::Tensor policy,
+             float result)
+      : state(std::move(state)), policy(policy), result(result) {}
 };
 
 class Agent {
  public:
-  Agent(ChessNN nn, DirichletDistribution* dirichlet,
-        DeviceManager* device_manager);
+  Agent(ChessNN nn, DirichletDistribution* dirichlet, Config* config);
 
   // Conduct the self play and gain experiences.
   void Run();
 
-  // No const since it has to be shuffled.
+  // Not const since it has to be shuffled.
   std::vector<std::unique_ptr<Experience>>& GetExperience() {
     return experiences_;
   }
 
-  Move GetBestMove(const GameState& game_state, int num_mcts_iter) const;
+  Move GetBestMove(const GameState& game_state) const;
 
  private:
   void DoSelfPlay();
 
   std::vector<std::unique_ptr<Experience>> experiences_;
-  std::vector<std::unique_ptr<GameState>> states_;
 
   ChessNN nn_;
   DirichletDistribution* dirichlet_;
-  DeviceManager* device_manager_;
+  Config* config_;
 };
 
 }  // namespace chess

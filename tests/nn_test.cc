@@ -400,7 +400,6 @@ TEST(ChessNNTest, InferenceTime) {
 }
 
 TEST(ChessNNTest, ChessNN) {
-  DeviceManager device_manager;
   ChessNN model(152);
 
   torch::Device device(torch::kCUDA);

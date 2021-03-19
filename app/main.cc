@@ -7,10 +7,11 @@ int main() {
     std::cout << "torch avail! " << std::endl;
   }
 
-  chess::DeviceManager device_manager;
+  chess::Config config("config.json");
+  config.PrintConfig();
 
-  chess::Train trainer(&device_manager);
-  trainer.DoTrain(2);
+  chess::Train trainer(&config);
+  trainer.DoTrain();
 
   /*
   chess::Chess game;

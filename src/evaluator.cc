@@ -16,7 +16,7 @@ float Evaluator::Evalulate(const GameState& state) {
   }
 
   torch::Tensor tensor = GameStateToTensor(state);
-  tensor = tensor.to(device_manager_->Device());
+  tensor = tensor.to(config_->device);
 
   // Convert board to the state.
   torch::Tensor value_tensor = chess_net_->GetValue(tensor);
@@ -60,7 +60,7 @@ std::vector<float> Evaluator::EvalulateBatch(
   }
 
   torch::Tensor batch_tensor = torch::stack(batch);
-  batch_tensor = batch_tensor.to(device_manager_->Device());
+  batch_tensor = batch_tensor.to(config_->device);
 
   torch::Tensor value_tensor = chess_net_->GetValue(batch_tensor);
 

@@ -10,9 +10,6 @@
 namespace chess {
 namespace {
 
-constexpr int kAgentEvalMCTSIter = 600;
-constexpr int kMaxGameMoves = 1000;
-
 Move StringToMove(std::string_view str_move) {
   if (str_move.size() < 4) {
     return Move(0, 0, 0, 0);
@@ -67,14 +64,20 @@ Move GetMoveFromUser(std::vector<Move> legal_moves) {
 
 }  // namespace
 
-GameResult Chess::PlayChessBetweenAgents(const Agent* white,
-                                         const Agent* black) {
+GameResult Chess::PlayChessBetweenAgents(const Agent* white, const Agent* black,
+                                         int max_game_moves) {
   std::vector<std::unique_ptr<GameState>> states;
   states.push_back(
       std::make_unique<GameState>(GameState::CreateInitGameState()));
 
   GameState* current = states.back().get();
-  while (current->TotalMoveCount() < kMaxGameMoves) {
+  while (current->TotalMoveCount() < max_game_moves) {
+    if (current->TotalMoveCount() % 100 == 0) {
+      fmt::print("{} .. at {} moves \n",
+                 std::hash<std::thread::id>{}(std::this_thread::get_id()),
+                 current->TotalMoveCount());
+    }
+
     if (current->IsDraw()) {
       return DRAW;
     }
@@ -85,9 +88,9 @@ GameResult Chess::PlayChessBetweenAgents(const Agent* white,
 
     Move best_move(0, 0, 0, 0);
     if (current->WhoIsMoving() == WHITE) {
-      best_move = white->GetBestMove(*current, kAgentEvalMCTSIter);
+      best_move = white->GetBestMove(*current);
     } else {
-      best_move = black->GetBestMove(*current, kAgentEvalMCTSIter);
+      best_move = black->GetBestMove(*current);
     }
 
     states.push_back(std::make_unique<GameState>(current, best_move));
@@ -97,13 +100,14 @@ GameResult Chess::PlayChessBetweenAgents(const Agent* white,
   return DRAW;
 }
 
-GameResult Chess::PlayChessWithHuman(const Agent* agent, PieceSide my_color) {
+GameResult Chess::PlayChessWithHuman(const Agent* agent, PieceSide my_color,
+                                     int max_game_moves) {
   std::vector<std::unique_ptr<GameState>> states;
   states.push_back(
       std::make_unique<GameState>(GameState::CreateInitGameState()));
 
   GameState* current = states.back().get();
-  while (current->TotalMoveCount() < kMaxGameMoves) {
+  while (current->TotalMoveCount() < max_game_moves) {
     if (current->IsDraw()) {
       return DRAW;
     }
@@ -117,7 +121,7 @@ GameResult Chess::PlayChessWithHuman(const Agent* agent, PieceSide my_color) {
       current->GetBoard().PrettyPrintBoard();
       best_move = GetMoveFromUser(current->GetLegalMoves());
     } else {
-      best_move = agent->GetBestMove(*current, kAgentEvalMCTSIter);
+      best_move = agent->GetBestMove(*current);
     }
 
     states.push_back(std::make_unique<GameState>(current, best_move));

@@ -12,12 +12,12 @@ float ComputePrior(float p_a, float dirchlet) {
 
 std::vector<std::vector<const GameState*>> CreateBatches(MCTSNode* node,
                                                          size_t batch_size,
-                                                         size_t total_batchs) {
+                                                         size_t total_baches) {
   std::vector<std::vector<const GameState*>> batches;
   size_t current_batch_num = 0;
   size_t child_index = 0;
 
-  while (current_batch_num < total_batchs) {
+  while (current_batch_num < total_baches) {
     batches.emplace_back();
 
     std::vector<const GameState*>& batch = batches.back();
@@ -66,8 +66,8 @@ void PreComputeBatches(
 }  // namespace
 
 MCTS::MCTS(const GameState* state, Evaluator* evaluator,
-           DirichletDistribution* dirichlet_dist)
-    : evaluator_(evaluator), dirichlet_dist_(dirichlet_dist) {
+           DirichletDistribution* dirichlet_dist, Config* config)
+    : evaluator_(evaluator), dirichlet_dist_(dirichlet_dist), config_(config) {
   nodes_.push_back(std::make_unique<MCTSNode>(
       std::make_unique<GameState>(*state), /*parent=*/nullptr, /*prior=*/1));
 
@@ -75,8 +75,8 @@ MCTS::MCTS(const GameState* state, Evaluator* evaluator,
 }
 
 // Run selection - eval - expand - backup once.
-void MCTS::RunMCTS(int num_iteration) {
-  for (; current_iter_ < num_iteration; current_iter_++) {
+void MCTS::RunMCTS() {
+  for (; current_iter_ < config_->num_mcts_iteration; current_iter_++) {
     MCTSNode* leaf = Select();
 
     Expand(leaf);
@@ -152,15 +152,16 @@ void MCTS::Expand(MCTSNode* node) {
   // For the root node, evey child will be visited anyway. So we just batch run
   // every nodes.
   if (root_ == node) {
-    std::vector<std::vector<const GameState*>> batches =
-        CreateBatches(node, 20, possible_moves.size());
+    std::vector<std::vector<const GameState*>> batches = CreateBatches(
+        node, config_->mcts_inference_batch_size, possible_moves.size());
     PreComputeBatches(node, evaluator_, batches);
   } else if (node->Parent()->Visit() >= 2) {
     // If the parent was visited more than 2 times before, then it is likely
     // that every child node of this parent will get visited too. Hence let's
     // just precompute all the values of child.
     std::vector<std::vector<const GameState*>> batches =
-        CreateBatches(node->Parent(), 20, 20);
+        CreateBatches(node->Parent(), config_->mcts_inference_batch_size,
+                      config_->mcts_inference_batch_size);
     PreComputeBatches(node->Parent(), evaluator_, batches);
   }
 }
@@ -212,18 +213,40 @@ torch::Tensor MCTS::GetPolicyVector() const {
   return policy.flatten(0);
 }
 
-Move MCTS::MoveToMake() const {
-  std::optional<Move> best_move;
-  int max_visit = 0;
+Move MCTS::MoveToMake(bool choose_best_move) const {
+  if (choose_best_move) {
+    std::optional<Move> best_move;
+    int max_visit = 0;
 
+    for (const auto& [child_node, move] : root_->Children()) {
+      if (child_node->Visit() > max_visit) {
+        max_visit = child_node->Visit();
+        best_move = move;
+      }
+    }
+
+    return best_move.value();
+  }
+
+  int current_count = 0;
+  std::vector<std::pair<Move, int>> move_and_cumulative_count;
   for (const auto& [child_node, move] : root_->Children()) {
-    if (child_node->Visit() > max_visit) {
-      max_visit = child_node->Visit();
-      best_move = move;
+    current_count += child_node->Visit();
+    move_and_cumulative_count.push_back(std::make_pair(move, current_count));
+  }
+
+  std::uniform_int_distribution<> distrib(0, current_count - 1);
+  int rand_num = distrib(config_->rand_gen);
+  for (const auto& [move, cumulative] : move_and_cumulative_count) {
+    if (rand_num < cumulative) {
+      return move;
     }
   }
 
-  return best_move.value();
+  // This should not happen.
+  assert(false);
+  return move_and_cumulative_count[0].first;
+
 }
 
 void MCTS::DumpDebugInfo() const { DumpDebugInfo(root_, 0); }

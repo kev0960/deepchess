@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "config.h"
 #include "dirichlet.h"
 #include "evaluator.h"
 #include "mcts_node.h"
@@ -13,16 +14,19 @@ class MCTS {
  public:
   // Create MCTS with starting game state.
   MCTS(const GameState* state, Evaluator* evaluator,
-       DirichletDistribution* dirichlet_dist);
+       DirichletDistribution* dirichlet_dist, Config* config);
 
-  void RunMCTS(int num_iteration);
+  void RunMCTS();
 
   // Get the policy vector. Policy vector is the flattened 1d vector of 73 * 8
   // * 8 (= 1 * 4672).
   torch::Tensor GetPolicyVector() const;
 
   // Return the move that corresponds to most visited node.
-  Move MoveToMake() const;
+  // If best_move is true, then it will select the move with the highest visit
+  // count. Otherwise, it will sample the move based on the probability of each
+  // move.
+  Move MoveToMake(bool choose_best_move = false) const;
 
   void DumpDebugInfo() const;
 
@@ -47,6 +51,7 @@ class MCTS {
   Evaluator* evaluator_;
   DirichletDistribution* dirichlet_dist_;
 
+  Config* config_;
   int current_iter_ = 0;
 };
 

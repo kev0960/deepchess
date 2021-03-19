@@ -9,8 +9,6 @@
 namespace chess {
 namespace {
 
-constexpr int kTotalGamePlayForTest = 100;
-
 void ShuffleVector(std::vector<std::unique_ptr<Experience>>& exp) {
   auto rd = std::random_device();
   auto rng = std::default_random_engine(rd());
@@ -18,43 +16,57 @@ void ShuffleVector(std::vector<std::unique_ptr<Experience>>& exp) {
   std::shuffle(exp.begin(), exp.end(), rng);
 }
 
+std::vector<std::vector<const Experience*>> CreateExperienceBatch(
+    const std::vector<std::unique_ptr<Experience>>& experiences,
+    size_t batch_size) {
+  std::vector<std::vector<const Experience*>> batches;
+
+  for (size_t i = 0; i < experiences.size(); i++) {
+    if (batches.empty() || batches.back().size() >= batch_size) {
+      batches.emplace_back();
+    }
+
+    std::vector<const Experience*>& batch = batches.back();
+    batch.push_back(experiences.at(i).get());
+  }
+
+  return batches;
+}
+
 }  // namespace
 
-void Train::DoTrain(int num_threads) {
-  (void)num_threads;
-  torch::save(current_best_, "CurrentBest.pt");
+void Train::DoTrain() {
+  for (int i = 0; i < config_->num_epoch; i++) {
+    torch::save(current_best_, "CurrentBest.pt");
+    torch::load(train_target_, "CurrentBest.pt");
+    train_target_->to(config_->device);
 
-  std::vector<std::thread> exp_generators;
-  for (int i = 0; i < 8; i++) {
-    exp_generators.push_back(std::thread(&Train::GenerateExperience, this));
+    std::vector<std::thread> exp_generators;
+    for (int i = 0; i < config_->num_threads; i++) {
+      exp_generators.push_back(std::thread(&Train::GenerateExperience, this));
+    }
+
+    for (auto& gen : exp_generators) {
+      gen.join();
+    }
+
+    std::cout << "Num exps : " << experiences_.size() << std::endl;
+
+    TrainNN();
+
+    if (IsTrainedBetter()) {
+      current_best_ = train_target_;
+    }
   }
-
-  for (auto& gen : exp_generators) {
-    gen.join();
-  }
-
-  std::cout << "Num exps : " << experiences_.size() << std::endl;
-
-  ChessNN train_target(10);
-  torch::load(train_target, "CurrentBest.pt");
-  train_target->to(device_manager_->Device());
-
-  TrainNN(train_target);
-
-  std::cout << "Is train better? " << IsTrainedBetter(train_target) << std::endl;
 }
 
 void Train::GenerateExperience() {
-  ChessNN train_target(10);
-  torch::load(train_target, "CurrentBest.pt");
-  train_target->to(device_manager_->Device());
-
   DirichletDistribution dirichlet(0.3);
 
-  while (total_exp_ < 8) {
+  while (total_exp_ < config_->num_self_play_game) {
     total_exp_++;
 
-    Agent agent(train_target, &dirichlet, device_manager_);
+    Agent agent(train_target_, &dirichlet, config_);
     agent.Run();
 
     auto& experiences = agent.GetExperience();
@@ -67,74 +79,116 @@ void Train::GenerateExperience() {
   }
 }
 
-void Train::TrainNN(ChessNN train_target) {
+void Train::TrainNN() {
   ShuffleVector(experiences_);
 
-  torch::optim::Adam optimizer(
-      train_target->parameters(),
-      torch::optim::AdamOptions(2e-4).weight_decay(1e-4));
-  for (const auto& exp : experiences_) {
-    torch::Tensor state_tensor = GameStateToTensor(*exp->state);
-    state_tensor = state_tensor.to(device_manager_->Device());
+  torch::optim::Adam optimizer(train_target_->parameters(),
+                               torch::optim::AdamOptions(config_->learning_rate)
+                                   .weight_decay(config_->weight_decay));
 
-    train_target->zero_grad();
+  size_t total = experiences_.size();
+  size_t done = 0;
 
-    torch::Tensor value = train_target->GetValue(state_tensor);
+  std::vector<std::vector<const Experience*>> batches =
+      CreateExperienceBatch(experiences_, config_->train_batch_size);
 
-    // We have to zero-out the probability for impossible actions. 
-    torch::Tensor policy =
-        NormalizePolicy(*exp->state, train_target->GetPolicy(state_tensor));
+  for (const auto& batch : batches) {
+    std::vector<torch::Tensor> states;
+    std::vector<torch::Tensor> target_policies;
+    std::vector<torch::Tensor> input_policies;
+    std::vector<float> results;
+
+    for (const Experience* exp : batch) {
+      torch::Tensor state_tensor =
+          GameStateToTensor(*exp->state.get()).to(config_->device);
+      states.push_back(state_tensor);
+
+      target_policies.push_back(exp->policy.to(config_->device));
+      results.push_back(exp->result);
+
+      input_policies.push_back(
+          NormalizePolicy(*exp->state, train_target_->GetPolicy(state_tensor)));
+    }
+
+    torch::Tensor state_batch = torch::stack(states).to(config_->device);
+
+    train_target_->zero_grad();
+
+    torch::Tensor input_values =
+        train_target_->GetValue(state_batch).to(config_->device);
+    torch::Tensor target_values =
+        torch::from_blob(results.data(), {(long)batch.size(), 1})
+            .to(config_->device);
+
+    torch::Tensor input_policy = torch::stack(input_policies).flatten(0);
+    torch::Tensor target_policy = torch::stack(target_policies).flatten(0);
 
     torch::Tensor total_loss =
-        torch::binary_cross_entropy(policy, exp->policy) +
-        torch::norm(value - exp->result);
+        -torch::dot(torch::log(target_policy).clamp(-1000), input_policy) +
+        torch::norm(input_values - target_values);
 
     total_loss.backward();
     optimizer.step();
 
-    std::cout << "Total loss : " << total_loss << std::endl;
-  }
+    done += batch.size();
 
-  if (IsTrainedBetter(train_target)) {
-    current_best_ = train_target;
+    std::cout << "Loss[" << done << " / " << total
+              << "] : " << total_loss.item<float>() << std::endl;
   }
 }
 
-bool Train::IsTrainedBetter(ChessNN train_target) {
-  DirichletDistribution no_noise(0);
-
-  Agent target(train_target, &no_noise, device_manager_);
-  Agent current(current_best_, &no_noise, device_manager_);
-
-  Chess chess;
-
-  // Now play game each other.
-  float target_score = 0;  // Win 1, Draw 0.5, Lose 0.
-  for (int i = 0; i < kTotalGamePlayForTest; i++) {
-    auto result = chess.PlayChessBetweenAgents(&target, &current);
-    if (result == DRAW) {
-      target_score += 0.5;
-    } else if (result == WHITE_WIN) {
-      target_score += 1;
-    }
+bool Train::IsTrainedBetter() {
+  std::vector<std::thread> agent_evaluators;
+  for (int i = 0; i < config_->num_threads; i++) {
+    agent_evaluators.push_back(std::thread(&Train::PlayGamesEachOther, this));
   }
 
-  for (int i = 0; i < kTotalGamePlayForTest; i++) {
-    auto result = chess.PlayChessBetweenAgents(&current, &target);
-    if (result == DRAW) {
-      target_score += 0.5;
-    } else if (result == BLACK_WIN) {
-      target_score += 1;
-    }
+  for (auto& eval : agent_evaluators) {
+    eval.join();
   }
 
-  std::cout << "Score : " << target_score << std::endl;
-
-  if (target_score >= 55) {
+  if (target_score_ >= config_->current_best_target_score) {
     return true;
   }
 
   return false;
 }
 
+void Train::PlayGamesEachOther() {
+  DirichletDistribution no_noise(0);
+
+  Agent target(train_target_, &no_noise, config_);
+  Agent current(current_best_, &no_noise, config_);
+
+  Chess chess;
+
+  while (current_game_playing_ < config_->total_game_play_for_testing) {
+    int current_game_index = current_game_playing_.fetch_add(1);
+    if (current_game_index < config_->total_game_play_for_testing / 2) {
+      auto result = chess.PlayChessBetweenAgents(
+          &target, &current, config_->max_game_moves_until_draw);
+      if (result == DRAW) {
+        fmt::print("Target [White] Draw \n");
+        target_score_ += 1;
+      } else if (result == WHITE_WIN) {
+        fmt::print("Target [White] Win \n");
+        target_score_ += 2;
+      }
+    } else {
+      auto result = chess.PlayChessBetweenAgents(
+          &current, &target, config_->max_game_moves_until_draw);
+      if (result == DRAW) {
+        fmt::print("Target [Black] Draw \n");
+        target_score_ += 1;
+      } else if (result == BLACK_WIN) {
+        fmt::print("Target [Black] Win \n");
+        target_score_ += 2;
+      }
+    }
+  }
+}
+
+void Train::AddExperienceForTesting(std::unique_ptr<Experience> exp) {
+  experiences_.push_back(std::move(exp));
+}
 }  // namespace chess
