@@ -7,7 +7,7 @@ int main() {
     std::cout << "torch avail! " << std::endl;
   }
 
-  chess::Config config("config.json");
+  chess::Config config("../config.json");
   config.PrintConfig();
 
   chess::Train trainer(&config);

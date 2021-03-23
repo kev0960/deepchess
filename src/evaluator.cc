@@ -84,5 +84,78 @@ std::vector<float> Evaluator::EvalulateBatch(
   return scores;
 }
 
+float Evaluator::EvaluateAsync(const GameState& state, int worker_id) {
+  if (state.IsDraw()) {
+    return 0;
+  }
+
+  if (state.GetLegalMoves().empty()) {
+    // If it is a checkmate, then it is done :(
+    return -1;
+  }
+
+  std::unique_lock<std::mutex> lk(worker_info_[worker_id].m_cv);
+
+  {
+    std::lock_guard<std::mutex> lk_queue(batch_queue_m_);
+    batch_queue_.push_back(std::make_pair(GameStateToTensor(state), worker_id));
+  }
+  batch_queue_cv_.notify_one();
+
+  // Wait until the inference is done.
+  worker_info_[worker_id].cv_inference.wait(lk);
+
+  return worker_info_[worker_id].result;
+}
+
+void Evaluator::InferenceWorker() {
+  while (!should_finish_inference_) {
+    std::unique_lock<std::mutex> lk(batch_queue_m_);
+    batch_queue_cv_.wait(lk, [this]() {
+      return !batch_queue_.empty() || should_finish_inference_;
+    });
+
+    std::vector<torch::Tensor> batches;
+    std::vector<int> workers;
+
+    batches.reserve(batch_queue_.size());
+    workers.reserve(batch_queue_.size());
+    for (auto [tensor, worker_id] : batch_queue_) {
+      batches.push_back(tensor);
+      workers.push_back(worker_id);
+    }
+
+    batch_queue_.clear();
+    lk.unlock();
+
+    if (batches.empty()) {
+      continue;
+    }
+
+    torch::Tensor batch_tensor = torch::stack(batches).to(config_->device);
+    torch::Tensor value_tensor = chess_net_->GetValue(batch_tensor);
+
+    torch::Device device(torch::kCPU);
+    torch::Tensor cpu_tensor = value_tensor.to(device);
+    for (size_t i = 0; i < workers.size(); i++) {
+      worker_info_[workers[i]].result = cpu_tensor.data_ptr<float>()[i];
+      worker_info_[workers[i]].cv_inference.notify_one();
+    }
+  }
+}
+
+void Evaluator::StartInferenceWorker() {
+  inference_worker_ =
+      std::make_unique<std::thread>([this]() { InferenceWorker(); });
+}
+
+Evaluator::~Evaluator() {
+  should_finish_inference_ = true;
+  if (inference_worker_) {
+    batch_queue_cv_.notify_one();
+    inference_worker_->join();
+  }
+}
+
 }  // namespace chess
 

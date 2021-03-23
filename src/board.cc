@@ -344,7 +344,20 @@ bool Board::IsCheck(PieceSide color) const {
   auto moves = GetAvailableMoves(color == WHITE ? BLACK : WHITE);
   for (auto m : moves) {
     if (m.To() == king_pos) {
-      return false;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool Board::OnlyKings() const {
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      Piece piece = PieceAt(row, col);
+      if (piece.Type() != PieceType::EMPTY && piece.Type() != PieceType::KING) {
+        return false;
+      }
     }
   }
 

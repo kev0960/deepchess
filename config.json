@@ -1,0 +1,13 @@
+{
+  "num_epoch" : 4,
+  "num_threads" : 32,
+  "num_self_play_game" : 400,
+  "total_game_play_for_testing" : 50,
+  "current_best_target_score" : 25,
+  "train_batch_size" : 64,
+  "max_game_moves_until_draw" : 300,
+  "num_mcts_iteration" : 600,
+  "existing_model_name" : "CurrentBest.pt",
+  "show_self_play_boards" : false,
+  "precompute_batch_parent_min_visit_count" : 3
+}

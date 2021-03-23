@@ -56,6 +56,20 @@ class Config {
   // alpha of DirichletDistribution.
   float dirichlet_noise = 0.3;
 
+  // Show boards of every move in the self-play.
+  bool show_self_play_boards = true;
+
+  // Use the Async version of Inference evaluator.
+  bool use_async_inference = false;
+
+  // Minimum number of visit required to precompute value of every child of the
+  // node. If this is set to num_mcts_iteration, then it means we won't
+  // precompute batches.
+  int precompute_batch_parent_min_visit_count = 2;
+
+  // Model name to import.
+  std::string existing_model_name = "";
+
   // Whether to use CUDA.
   bool use_cuda = true;
   torch::Device device = torch::Device(torch::kCUDA);

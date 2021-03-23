@@ -329,6 +329,11 @@ bool GameState::IsDraw() const {
     return true;
   }
 
+  // Check if there are only kings. (Impossible to checkmate.)
+  if (current_board_.OnlyKings()) {
+    return true;
+  }
+
   // Check for the stalemate.
   if (!current_board_.IsCheck(who_is_moving_) && GetLegalMoves().empty()) {
     return true;

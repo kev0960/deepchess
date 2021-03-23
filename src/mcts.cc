@@ -66,8 +66,11 @@ void PreComputeBatches(
 }  // namespace
 
 MCTS::MCTS(const GameState* state, Evaluator* evaluator,
-           DirichletDistribution* dirichlet_dist, Config* config)
-    : evaluator_(evaluator), dirichlet_dist_(dirichlet_dist), config_(config) {
+           DirichletDistribution* dirichlet_dist, Config* config, int worker_id)
+    : evaluator_(evaluator),
+      dirichlet_dist_(dirichlet_dist),
+      config_(config),
+      worker_id_(worker_id) {
   nodes_.push_back(std::make_unique<MCTSNode>(
       std::make_unique<GameState>(*state), /*parent=*/nullptr, /*prior=*/1));
 
@@ -149,13 +152,18 @@ void MCTS::Expand(MCTSNode* node) {
     node->AddChildNode(nodes_.back().get(), move);
   }
 
+  // Shuffle the ordering of the child node visit (for the randomization).
+  std::shuffle(node->Children().begin(), node->Children().end(),
+               config_->rand_gen);
+
   // For the root node, evey child will be visited anyway. So we just batch run
   // every nodes.
   if (root_ == node) {
     std::vector<std::vector<const GameState*>> batches = CreateBatches(
         node, config_->mcts_inference_batch_size, possible_moves.size());
     PreComputeBatches(node, evaluator_, batches);
-  } else if (node->Parent()->Visit() >= 2) {
+  } else if (node->Parent()->Visit() >=
+             config_->precompute_batch_parent_min_visit_count) {
     // If the parent was visited more than 2 times before, then it is likely
     // that every child node of this parent will get visited too. Hence let's
     // just precompute all the values of child.
@@ -169,6 +177,10 @@ void MCTS::Expand(MCTSNode* node) {
 float MCTS::Evaluate(const MCTSNode* node) {
   if (node->Computed()) {
     return node->V();
+  }
+
+  if (config_->use_async_inference) {
+    return evaluator_->EvaluateAsync(node->State(), worker_id_);
   }
 
   // std::cout << "Evaluating " << std::endl;
@@ -246,7 +258,6 @@ Move MCTS::MoveToMake(bool choose_best_move) const {
   // This should not happen.
   assert(false);
   return move_and_cumulative_count[0].first;
-
 }
 
 void MCTS::DumpDebugInfo() const { DumpDebugInfo(root_, 0); }

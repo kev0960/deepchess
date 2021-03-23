@@ -51,6 +51,9 @@ class Board {
 
   bool IsCheck(PieceSide side) const;
 
+  // Return true if there are only kings on the board.
+  bool OnlyKings() const;
+
   // Find the available moves of the piece at given location.
   std::vector<Move> GetMoveOfPieceAt(int row, int col) const;
   std::vector<Move> GetMoveOfPieceAt(std::string_view coord) const;

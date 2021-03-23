@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "dirichlet.h"
+#include "evaluator.h"
 #include "game_state.h"
 #include "nn/chess_nn.h"
 
@@ -27,7 +28,8 @@ struct Experience {
 
 class Agent {
  public:
-  Agent(ChessNN nn, DirichletDistribution* dirichlet, Config* config);
+  Agent(DirichletDistribution* dirichlet, Config* config, Evaluator* evaluator,
+        int worker_id);
 
   // Conduct the self play and gain experiences.
   void Run();
@@ -38,15 +40,19 @@ class Agent {
   }
 
   Move GetBestMove(const GameState& game_state) const;
+  int WorkerId() const { return worker_id_; }
 
  private:
   void DoSelfPlay();
 
   std::vector<std::unique_ptr<Experience>> experiences_;
 
-  ChessNN nn_;
   DirichletDistribution* dirichlet_;
   Config* config_;
+  Evaluator* evaluator_;
+
+  // ID of the current thread worker.
+  int worker_id_;
 };
 
 }  // namespace chess

@@ -64,20 +64,14 @@ Move GetMoveFromUser(std::vector<Move> legal_moves) {
 
 }  // namespace
 
-GameResult Chess::PlayChessBetweenAgents(const Agent* white, const Agent* black,
-                                         int max_game_moves) {
+GameResult Chess::PlayChessBetweenAgents(const Agent* white,
+                                         const Agent* black) {
   std::vector<std::unique_ptr<GameState>> states;
   states.push_back(
       std::make_unique<GameState>(GameState::CreateInitGameState()));
 
   GameState* current = states.back().get();
-  while (current->TotalMoveCount() < max_game_moves) {
-    if (current->TotalMoveCount() % 100 == 0) {
-      fmt::print("{} .. at {} moves \n",
-                 std::hash<std::thread::id>{}(std::this_thread::get_id()),
-                 current->TotalMoveCount());
-    }
-
+  while (current->TotalMoveCount() < config_->max_game_moves_until_draw) {
     if (current->IsDraw()) {
       return DRAW;
     }
@@ -95,19 +89,24 @@ GameResult Chess::PlayChessBetweenAgents(const Agent* white, const Agent* black,
 
     states.push_back(std::make_unique<GameState>(current, best_move));
     current = states.back().get();
+
+    if (config_->show_self_play_boards) {
+      fmt::print("Agent Self Play Worker [{}] .. at {} moves \n",
+                 white->WorkerId(), current->TotalMoveCount());
+      current->GetBoard().PrettyPrintBoard();
+    }
   }
 
   return DRAW;
 }
 
-GameResult Chess::PlayChessWithHuman(const Agent* agent, PieceSide my_color,
-                                     int max_game_moves) {
+GameResult Chess::PlayChessWithHuman(const Agent* agent, PieceSide my_color) {
   std::vector<std::unique_ptr<GameState>> states;
   states.push_back(
       std::make_unique<GameState>(GameState::CreateInitGameState()));
 
   GameState* current = states.back().get();
-  while (current->TotalMoveCount() < max_game_moves) {
+  while (current->TotalMoveCount() < config_->max_game_moves_until_draw) {
     if (current->IsDraw()) {
       return DRAW;
     }

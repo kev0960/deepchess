@@ -28,8 +28,9 @@ class Train {
   void AddExperienceForTesting(std::unique_ptr<Experience> exp);
 
  private:
-  void GenerateExperience();
-  void PlayGamesEachOther();
+  void GenerateExperience(Evaluator* evaluator, int worker_id);
+  void PlayGamesEachOther(Evaluator* target_eval, Evaluator* current_eval,
+                          int worker_id);
 
   ChessNN current_best_;
   ChessNN train_target_;

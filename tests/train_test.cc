@@ -52,11 +52,112 @@ TEST(TrainTest, AgentPlayTest) {
   config.total_game_play_for_testing = 20;
   config.max_game_moves_until_draw = 10;
   config.current_best_target_score = 10;
+  config.show_self_play_boards = false;
 
   Train trainer(&config);
 
   // Every match should be draw.
   EXPECT_TRUE(trainer.IsTrainedBetter());
+}
+
+/*
+TEST(TrainTest, BenchmarkTimeUsingAsync) {
+  Config config;
+  config.num_threads = 32;
+  config.num_mcts_iteration = 600;
+  config.use_async_inference = true;
+  config.total_game_play_for_testing = 32;
+  config.max_game_moves_until_draw = 10;
+  config.current_best_target_score = 10;
+  config.show_self_play_boards = false;
+
+  config.precompute_batch_parent_min_visit_count = 3;
+
+  Train trainer(&config);
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  // Every match should be draw.
+  EXPECT_TRUE(trainer.IsTrainedBetter());
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "Time for Entire Game"
+            << ms.count() / 1000.0 / config.num_threads << "ms" << std::endl;
+}
+
+TEST(TrainTest, BenchmarkTimeUsingPreCompute) {
+  Config config;
+  config.num_threads = 32;
+  config.num_mcts_iteration = 600;
+  config.use_async_inference = false;
+  config.total_game_play_for_testing = 32;
+  config.max_game_moves_until_draw = 10;
+  config.current_best_target_score = 10;
+  config.precompute_batch_parent_min_visit_count = 3;
+  config.show_self_play_boards = false;
+
+  Train trainer(&config);
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  // Every match should be draw.
+  EXPECT_TRUE(trainer.IsTrainedBetter());
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+  std::cout << "Time for Entire Game"
+            << ms.count() / 1000.0 / config.num_threads << "ms" << std::endl;
+}
+*/
+
+TEST(TrainTest, BenchmarkTrainTimeUsingAsyncInference) {
+  Config config;
+  config.num_epoch = 1;
+  config.num_threads = 32;
+  config.num_self_play_game = 32;
+  config.num_mcts_iteration = 600;
+  config.use_async_inference = true;
+  config.total_game_play_for_testing = 32;
+  config.max_game_moves_until_draw = 10;
+  config.show_self_play_boards = false;
+  config.precompute_batch_parent_min_visit_count = 3;
+  config.existing_model_name = "SomeModelForTesting.pt";
+
+  Train trainer(&config);
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  trainer.DoTrain();
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Time for Entire Train" << ms.count() / 1000.0 << "s"
+            << std::endl;
+}
+
+TEST(TrainTest, BenchmarkTrainTimeUsingPrecomputeOnly) {
+  Config config;
+  config.num_epoch = 1;
+  config.num_threads = 12;
+  config.num_self_play_game = 32;
+  config.num_mcts_iteration = 600;
+  config.use_async_inference = false;
+  config.total_game_play_for_testing = 32;
+  config.max_game_moves_until_draw = 10;
+  config.show_self_play_boards = false;
+  config.existing_model_name = "SomeModelForTesting.pt";
+
+  Train trainer(&config);
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  trainer.DoTrain();
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Time for Entire Train" << ms.count() / 1000.0 << "s"
+            << std::endl;
 }
 
 }  // namespace

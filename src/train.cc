@@ -4,6 +4,7 @@
 
 #include "agent.h"
 #include "chess.h"
+#include "evaluator.h"
 #include "nn/nn_util.h"
 
 namespace chess {
@@ -33,41 +34,76 @@ std::vector<std::vector<const Experience*>> CreateExperienceBatch(
   return batches;
 }
 
+bool IsFileExist(const std::string& file_name) {
+  std::ifstream in(file_name.c_str());
+  return in.is_open();
+}
+
 }  // namespace
 
 void Train::DoTrain() {
+  std::string model_name = config_->existing_model_name;
+  if (IsFileExist(model_name)) {
+    torch::load(current_best_, model_name);
+  } else {
+    std::cout << model_name << " is not found" << std::endl;
+    model_name = "CurrentBest.pt";
+    torch::save(current_best_, model_name);
+  }
+
   for (int i = 0; i < config_->num_epoch; i++) {
-    torch::save(current_best_, "CurrentBest.pt");
-    torch::load(train_target_, "CurrentBest.pt");
+    torch::load(train_target_, model_name);
     train_target_->to(config_->device);
 
+    Evaluator evaluator(train_target_, config_);
+    evaluator.StartInferenceWorker();
+
+    auto start = std::chrono::high_resolution_clock::now();
     std::vector<std::thread> exp_generators;
     for (int i = 0; i < config_->num_threads; i++) {
-      exp_generators.push_back(std::thread(&Train::GenerateExperience, this));
+      exp_generators.push_back(
+          std::thread(&Train::GenerateExperience, this, &evaluator, i));
     }
 
     for (auto& gen : exp_generators) {
       gen.join();
     }
 
-    std::cout << "Num exps : " << experiences_.size() << std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    fmt::print(
+        "Total {} Experiences generated, took {} seconds, which is {} seconds "
+        "per game. \n",
+        experiences_.size(), ms.count() / 1000.0,
+        ms.count() / 1000.0 / config_->num_self_play_game);
 
     TrainNN();
 
     if (IsTrainedBetter()) {
-      current_best_ = train_target_;
+      // Copy the contents of train_target to current_best via model
+      // serialization & deserialization.
+      torch::save(train_target_, model_name);
+      torch::load(current_best_, model_name);
     }
+
+    total_exp_ = 0;
+    experiences_.clear();
   }
 }
 
-void Train::GenerateExperience() {
+void Train::GenerateExperience(Evaluator* evaluator, int worker_id) {
   DirichletDistribution dirichlet(0.3);
 
   while (total_exp_ < config_->num_self_play_game) {
     total_exp_++;
 
-    Agent agent(train_target_, &dirichlet, config_);
+    torch::NoGradGuard guard;
+    Agent agent(&dirichlet, config_, evaluator, worker_id);
     agent.Run();
+
+    std::cout << "Current : " << total_exp_ << " is done" << std::endl;
 
     auto& experiences = agent.GetExperience();
 
@@ -98,6 +134,8 @@ void Train::TrainNN() {
     std::vector<torch::Tensor> input_policies;
     std::vector<float> results;
 
+    train_target_->zero_grad();
+
     for (const Experience* exp : batch) {
       torch::Tensor state_tensor =
           GameStateToTensor(*exp->state.get()).to(config_->device);
@@ -111,8 +149,6 @@ void Train::TrainNN() {
     }
 
     torch::Tensor state_batch = torch::stack(states).to(config_->device);
-
-    train_target_->zero_grad();
 
     torch::Tensor input_values =
         train_target_->GetValue(state_batch).to(config_->device);
@@ -138,15 +174,26 @@ void Train::TrainNN() {
 }
 
 bool Train::IsTrainedBetter() {
+  target_score_ = 0;
+  current_game_playing_ = 0;
+
+  Evaluator target_eval(train_target_, config_);
+  target_eval.StartInferenceWorker();
+
+  Evaluator current_eval(current_best_, config_);
+  current_eval.StartInferenceWorker();
+
   std::vector<std::thread> agent_evaluators;
   for (int i = 0; i < config_->num_threads; i++) {
-    agent_evaluators.push_back(std::thread(&Train::PlayGamesEachOther, this));
+    agent_evaluators.push_back(std::thread(&Train::PlayGamesEachOther, this,
+                                           &target_eval, &current_eval, i));
   }
 
   for (auto& eval : agent_evaluators) {
     eval.join();
   }
 
+  std::cout << "Target score : " << target_score_ << std::endl;
   if (target_score_ >= config_->current_best_target_score) {
     return true;
   }
@@ -154,19 +201,19 @@ bool Train::IsTrainedBetter() {
   return false;
 }
 
-void Train::PlayGamesEachOther() {
+void Train::PlayGamesEachOther(Evaluator* target_eval, Evaluator* current_eval,
+                               int worker_id) {
   DirichletDistribution no_noise(0);
 
-  Agent target(train_target_, &no_noise, config_);
-  Agent current(current_best_, &no_noise, config_);
+  Agent target(&no_noise, config_, target_eval, worker_id);
+  Agent current(&no_noise, config_, current_eval, worker_id);
 
-  Chess chess;
+  Chess chess(config_);
 
   while (current_game_playing_ < config_->total_game_play_for_testing) {
     int current_game_index = current_game_playing_.fetch_add(1);
     if (current_game_index < config_->total_game_play_for_testing / 2) {
-      auto result = chess.PlayChessBetweenAgents(
-          &target, &current, config_->max_game_moves_until_draw);
+      auto result = chess.PlayChessBetweenAgents(&target, &current);
       if (result == DRAW) {
         fmt::print("Target [White] Draw \n");
         target_score_ += 1;
@@ -175,8 +222,7 @@ void Train::PlayGamesEachOther() {
         target_score_ += 2;
       }
     } else {
-      auto result = chess.PlayChessBetweenAgents(
-          &current, &target, config_->max_game_moves_until_draw);
+      auto result = chess.PlayChessBetweenAgents(&current, &target);
       if (result == DRAW) {
         fmt::print("Target [Black] Draw \n");
         target_score_ += 1;
@@ -191,4 +237,5 @@ void Train::PlayGamesEachOther() {
 void Train::AddExperienceForTesting(std::unique_ptr<Experience> exp) {
   experiences_.push_back(std::move(exp));
 }
+
 }  // namespace chess

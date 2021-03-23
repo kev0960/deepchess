@@ -9,8 +9,8 @@ namespace {
 
 std::pair<Experience, Move> GetMoveForSelfPlay(
     std::unique_ptr<GameState> current, Evaluator* evaluator,
-    DirichletDistribution* dirichlet, Config* config) {
-  MCTS mcts(current.get(), evaluator, dirichlet, config);
+    DirichletDistribution* dirichlet, Config* config, int worker_id) {
+  MCTS mcts(current.get(), evaluator, dirichlet, config, worker_id);
   mcts.RunMCTS();
 
   Move best_move = mcts.MoveToMake(/*choose_best_move=*/false);
@@ -21,22 +21,23 @@ std::pair<Experience, Move> GetMoveForSelfPlay(
 
 }  // namespace
 
-Agent::Agent(ChessNN nn, DirichletDistribution* dirichlet, Config* config)
-    : nn_(nn), dirichlet_(dirichlet), config_(config) {}
+Agent::Agent(DirichletDistribution* dirichlet, Config* config,
+             Evaluator* evaluator, int worker_id)
+    : dirichlet_(dirichlet),
+      config_(config),
+      evaluator_(evaluator),
+      worker_id_(worker_id) {}
 
 void Agent::Run() { DoSelfPlay(); }
 
 void Agent::DoSelfPlay() {
   // Generate experiences.
   auto current = std::make_unique<GameState>(GameState::CreateInitGameState());
-
-  Evaluator evaluator(nn_, config_);
-
   auto start = std::chrono::high_resolution_clock::now();
 
   int num_move = 0;
   while (num_move < config_->max_game_moves_until_draw) {
-    // Checkmate! Game is over :)
+    // Game is over :)
     if (current->GetLegalMoves().empty()) {
       break;
     }
@@ -45,23 +46,24 @@ void Agent::DoSelfPlay() {
       break;
     }
 
-    auto [experience, move] =
-        GetMoveForSelfPlay(std::move(current), &evaluator, dirichlet_, config_);
+    auto [experience, move] = GetMoveForSelfPlay(
+        std::move(current), evaluator_, dirichlet_, config_, worker_id_);
     experiences_.push_back(std::make_unique<Experience>(std::move(experience)));
 
     current =
         std::make_unique<GameState>(experiences_.back()->state.get(), move);
     num_move++;
 
-    fmt::print("{} (Moves: {}) ------ \n",
-               std::hash<std::thread::id>{}(std::this_thread::get_id()),
-               num_move);
-    current->GetBoard().PrettyPrintBoard();
+    if (config_->show_self_play_boards) {
+      fmt::print("Worker [{}] (Moves: {}) ------ \n", worker_id_, num_move);
+      current->GetBoard().PrettyPrintBoard();
+    }
   }
 
   auto end = std::chrono::high_resolution_clock::now();
-  auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-  fmt::print("Took {} ms", ms.count() / 1000.0);
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  fmt::print("Took {} minutes ... {} secs per move \n",
+             ms.count() / 1000.0 / 60, ms.count() / num_move / 1000.0);
 
   // When the game ends, "current" owns the game ending state, which is not
   // added to the experiences queue.
@@ -88,9 +90,7 @@ void Agent::DoSelfPlay() {
 }
 
 Move Agent::GetBestMove(const GameState& game_state) const {
-  Evaluator evaluator(nn_, config_);
-
-  MCTS mcts(&game_state, &evaluator, dirichlet_, config_);
+  MCTS mcts(&game_state, evaluator_, dirichlet_, config_, worker_id_);
   mcts.RunMCTS();
 
   return mcts.MoveToMake(/*choose_best_move=*/true);

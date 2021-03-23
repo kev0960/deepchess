@@ -14,7 +14,7 @@ class MCTS {
  public:
   // Create MCTS with starting game state.
   MCTS(const GameState* state, Evaluator* evaluator,
-       DirichletDistribution* dirichlet_dist, Config* config);
+       DirichletDistribution* dirichlet_dist, Config* config, int worker_id);
 
   void RunMCTS();
 
@@ -45,6 +45,8 @@ class MCTS {
 
   void DumpDebugInfo(MCTSNode* node, int depth) const;
 
+  // NOTE: Since we shuffle the child nodes, the ordering of moves may be
+  // different from the ordering returned from state.PossibleMoves().
   std::vector<std::unique_ptr<MCTSNode>> nodes_;
 
   MCTSNode* root_;
@@ -53,6 +55,7 @@ class MCTS {
 
   Config* config_;
   int current_iter_ = 0;
+  int worker_id_;
 };
 
 }  // namespace chess
