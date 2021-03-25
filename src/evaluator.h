@@ -18,6 +18,9 @@ struct EvaluatorWorkerInfo {
   // Mutex for cv.
   std::mutex m_cv;
 
+  // True if the result is set.
+  bool result_is_set = false;
+
   // Hold the result of the inference.
   float result;
 };
@@ -54,7 +57,7 @@ class Evaluator {
   std::vector<EvaluatorWorkerInfo> worker_info_;
 
   bool should_finish_inference_ = false;
-  std::unique_ptr<std::thread> inference_worker_;
+  std::vector<std::thread> inference_workers_;
 };
 
 }  // namespace chess

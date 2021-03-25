@@ -23,7 +23,7 @@ class Train {
   void TrainNN();
 
   // Check whether the train_target performs better than current_best.
-  bool IsTrainedBetter();
+  bool IsTrainedBetter(Evaluator* target_eval, Evaluator* current_eval);
 
   void AddExperienceForTesting(std::unique_ptr<Experience> exp);
 

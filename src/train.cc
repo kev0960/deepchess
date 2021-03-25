@@ -51,18 +51,21 @@ void Train::DoTrain() {
     torch::save(current_best_, model_name);
   }
 
+  Evaluator target_eval(train_target_, config_);
+  target_eval.StartInferenceWorker();
+
+  Evaluator current_eval(current_best_, config_);
+  current_eval.StartInferenceWorker();
+
   for (int i = 0; i < config_->num_epoch; i++) {
     torch::load(train_target_, model_name);
     train_target_->to(config_->device);
-
-    Evaluator evaluator(train_target_, config_);
-    evaluator.StartInferenceWorker();
 
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<std::thread> exp_generators;
     for (int i = 0; i < config_->num_threads; i++) {
       exp_generators.push_back(
-          std::thread(&Train::GenerateExperience, this, &evaluator, i));
+          std::thread(&Train::GenerateExperience, this, &target_eval, i));
     }
 
     for (auto& gen : exp_generators) {
@@ -80,8 +83,10 @@ void Train::DoTrain() {
         ms.count() / 1000.0 / config_->num_self_play_game);
 
     TrainNN();
+    torch::save(train_target_,
+                "CurrentTrainTarget" + std::to_string(i + 1) + ".pt");
 
-    if (IsTrainedBetter()) {
+    if (IsTrainedBetter(&target_eval, &current_eval)) {
       // Copy the contents of train_target to current_best via model
       // serialization & deserialization.
       torch::save(train_target_, model_name);
@@ -96,9 +101,7 @@ void Train::DoTrain() {
 void Train::GenerateExperience(Evaluator* evaluator, int worker_id) {
   DirichletDistribution dirichlet(0.3);
 
-  while (total_exp_ < config_->num_self_play_game) {
-    total_exp_++;
-
+  while (total_exp_.fetch_add(1) < config_->num_self_play_game) {
     torch::NoGradGuard guard;
     Agent agent(&dirichlet, config_, evaluator, worker_id);
     agent.Run();
@@ -173,20 +176,14 @@ void Train::TrainNN() {
   }
 }
 
-bool Train::IsTrainedBetter() {
+bool Train::IsTrainedBetter(Evaluator* target_eval, Evaluator* current_eval) {
   target_score_ = 0;
   current_game_playing_ = 0;
-
-  Evaluator target_eval(train_target_, config_);
-  target_eval.StartInferenceWorker();
-
-  Evaluator current_eval(current_best_, config_);
-  current_eval.StartInferenceWorker();
 
   std::vector<std::thread> agent_evaluators;
   for (int i = 0; i < config_->num_threads; i++) {
     agent_evaluators.push_back(std::thread(&Train::PlayGamesEachOther, this,
-                                           &target_eval, &current_eval, i));
+                                           target_eval, current_eval, i));
   }
 
   for (auto& eval : agent_evaluators) {
@@ -210,8 +207,12 @@ void Train::PlayGamesEachOther(Evaluator* target_eval, Evaluator* current_eval,
 
   Chess chess(config_);
 
-  while (current_game_playing_ < config_->total_game_play_for_testing) {
+  while (true) {
     int current_game_index = current_game_playing_.fetch_add(1);
+    if (current_game_index >= config_->total_game_play_for_testing) {
+      break;
+    }
+
     if (current_game_index < config_->total_game_play_for_testing / 2) {
       auto result = chess.PlayChessBetweenAgents(&target, &current);
       if (result == DRAW) {

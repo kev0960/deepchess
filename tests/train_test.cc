@@ -56,8 +56,17 @@ TEST(TrainTest, AgentPlayTest) {
 
   Train trainer(&config);
 
+  ChessNN nn(10);
+  nn->to(config.device);
+
+  Evaluator target_eval(nn, &config);
+  target_eval.StartInferenceWorker();
+
+  Evaluator current_eval(nn, &config);
+  current_eval.StartInferenceWorker();
+
   // Every match should be draw.
-  EXPECT_TRUE(trainer.IsTrainedBetter());
+  EXPECT_TRUE(trainer.IsTrainedBetter(&target_eval, &current_eval));
 }
 
 /*
@@ -117,9 +126,10 @@ TEST(TrainTest, BenchmarkTrainTimeUsingAsyncInference) {
   config.num_threads = 32;
   config.num_self_play_game = 32;
   config.num_mcts_iteration = 600;
+  config.mcts_inference_batch_size = 64;
   config.use_async_inference = true;
-  config.total_game_play_for_testing = 32;
-  config.max_game_moves_until_draw = 10;
+  config.total_game_play_for_testing = 50;
+  config.max_game_moves_until_draw = 20;
   config.show_self_play_boards = false;
   config.precompute_batch_parent_min_visit_count = 3;
   config.existing_model_name = "SomeModelForTesting.pt";
@@ -136,6 +146,7 @@ TEST(TrainTest, BenchmarkTrainTimeUsingAsyncInference) {
             << std::endl;
 }
 
+/*
 TEST(TrainTest, BenchmarkTrainTimeUsingPrecomputeOnly) {
   Config config;
   config.num_epoch = 1;
@@ -159,6 +170,7 @@ TEST(TrainTest, BenchmarkTrainTimeUsingPrecomputeOnly) {
   std::cout << "Time for Entire Train" << ms.count() / 1000.0 << "s"
             << std::endl;
 }
+*/
 
 }  // namespace
 }  // namespace chess

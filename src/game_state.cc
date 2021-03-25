@@ -329,8 +329,8 @@ bool GameState::IsDraw() const {
     return true;
   }
 
-  // Check if there are only kings. (Impossible to checkmate.)
-  if (current_board_.OnlyKings()) {
+  // Check if draw by insufficient materials.
+  if (current_board_.DrawByInsufficientMaterial()) {
     return true;
   }
 

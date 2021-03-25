@@ -94,18 +94,23 @@ float Evaluator::EvaluateAsync(const GameState& state, int worker_id) {
     return -1;
   }
 
-  std::unique_lock<std::mutex> lk(worker_info_[worker_id].m_cv);
+  auto& worker_info = worker_info_[worker_id];
+
+  std::unique_lock<std::mutex> lk(worker_info.m_cv);
+  worker_info.result_is_set = false;
 
   {
     std::lock_guard<std::mutex> lk_queue(batch_queue_m_);
     batch_queue_.push_back(std::make_pair(GameStateToTensor(state), worker_id));
   }
+
   batch_queue_cv_.notify_one();
 
   // Wait until the inference is done.
-  worker_info_[worker_id].cv_inference.wait(lk);
+  worker_info_[worker_id].cv_inference.wait(
+      lk, [&worker_info]() { return worker_info.result_is_set; });
 
-  return worker_info_[worker_id].result;
+  return worker_info.result;
 }
 
 void Evaluator::InferenceWorker() {
@@ -138,22 +143,32 @@ void Evaluator::InferenceWorker() {
     torch::Device device(torch::kCPU);
     torch::Tensor cpu_tensor = value_tensor.to(device);
     for (size_t i = 0; i < workers.size(); i++) {
-      worker_info_[workers[i]].result = cpu_tensor.data_ptr<float>()[i];
-      worker_info_[workers[i]].cv_inference.notify_one();
+      auto& worker_info = worker_info_[workers[i]];
+
+      worker_info.result = cpu_tensor.data_ptr<float>()[i];
+      worker_info.result_is_set = true;
+      worker_info.cv_inference.notify_one();
     }
   }
 }
 
 void Evaluator::StartInferenceWorker() {
-  inference_worker_ =
-      std::make_unique<std::thread>([this]() { InferenceWorker(); });
+  // TODO Does multiple inference worker work?
+  for (int i = 0; i < 1; i++) {
+    inference_workers_.push_back(
+        std::thread(&Evaluator::InferenceWorker, this));
+  }
 }
 
 Evaluator::~Evaluator() {
   should_finish_inference_ = true;
-  if (inference_worker_) {
-    batch_queue_cv_.notify_one();
-    inference_worker_->join();
+  if (!inference_workers_.empty()) {
+    std::cerr << "Deleting evaluators.." << std::endl;
+    batch_queue_cv_.notify_all();
+
+    for (auto& worker : inference_workers_) {
+      worker.join();
+    }
   }
 }
 

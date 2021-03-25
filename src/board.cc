@@ -351,17 +351,34 @@ bool Board::IsCheck(PieceSide color) const {
   return false;
 }
 
-bool Board::OnlyKings() const {
+bool Board::DrawByInsufficientMaterial() const {
+  int knight_count = 0, bishop_count = 0;
+
   for (int row = 0; row < 8; row++) {
     for (int col = 0; col < 8; col++) {
-      Piece piece = PieceAt(row, col);
-      if (piece.Type() != PieceType::EMPTY && piece.Type() != PieceType::KING) {
+      PieceType piece = PieceAt(row, col).Type();
+      if (piece == EMPTY || piece == KING) {
+        continue;
+      }
+
+      if (piece == KNIGHT) {
+        knight_count++;
+      } else if (piece == BISHOP) {
+        bishop_count++;
+      } else {
         return false;
       }
     }
   }
 
-  return true;
+  // King and bishop versus King or
+  // King and knight versus King or
+  // King versus King
+  if (knight_count + bishop_count <= 1) {
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace chess
