@@ -24,6 +24,8 @@ class Move {
       : from_to_(((row_from * 8 + col_from) << 6) | (row_to * 8 + col_to)),
         promotion_(promotion) {}
 
+  static Move MoveFromString(std::string_view s);
+
   constexpr int From() const { return static_cast<char>(from_to_ >> 6); }
   constexpr int To() const { return static_cast<char>(from_to_ & 0b111111); }
 

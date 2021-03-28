@@ -1,6 +1,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <string>
+
 namespace chess {
 
 // Util class to compute once (when needed).
@@ -24,6 +26,7 @@ class LazyGet {
 };
 
 void PrintStackTrace();
+bool IsFileExist(const std::string& file_name);
 
 }  // namespace chess
 

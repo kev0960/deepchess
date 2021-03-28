@@ -62,8 +62,9 @@ void Agent::DoSelfPlay() {
 
   auto end = std::chrono::high_resolution_clock::now();
   auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  fmt::print("Took {} minutes ... {} secs per move \n",
-             ms.count() / 1000.0 / 60, ms.count() / num_move / 1000.0);
+  fmt::print("Took {:.3f} minutes ... {} secs per move (Total : {} moves) \n",
+             ms.count() / 1000.0 / 60, ms.count() / num_move / 1000.0,
+             num_move);
 
   // When the game ends, "current" owns the game ending state, which is not
   // added to the experiences queue.

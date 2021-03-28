@@ -41,6 +41,9 @@ class Config {
   // Size of the batch for the MCTS roll-out inferencing.
   int mcts_inference_batch_size = 20;
 
+  // Size of the batch to request inferencing rollouts.
+  int mcts_batch_size = 5;
+
   // Size of the batch during training.
   int train_batch_size = 40;
 
@@ -73,6 +76,12 @@ class Config {
   // Whether to use CUDA.
   bool use_cuda = true;
   torch::Device device = torch::Device(torch::kCUDA);
+
+  // Should run the server.
+  bool run_server = false;
+
+  // Server port.
+  std::string server_port = "8888";
 
   // Random number generator used across all.
   std::mt19937 rand_gen;

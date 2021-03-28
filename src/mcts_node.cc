@@ -43,9 +43,11 @@ MCTSNode* MCTSNode::Parent() const { return parent_; }
 
 int MCTSNode::Visit() const { return n_s_a_; }
 
-float MCTSNode::Q() const { return w_s_a_ / n_s_a_; }
+float MCTSNode::Q() const { return w_s_a_ / n_s_a_ + virtual_loss_; }
 
 float MCTSNode::V() const { return v_; }
+
+void MCTSNode::AddVirtualLoss(float loss) { virtual_loss_ += loss; }
 
 float MCTSNode::Prior() const { return prior_; }
 
@@ -56,9 +58,8 @@ void MCTSNode::DumpDebugInfo() const {
         "Computed=[{}]\n",
         w_s_a_, n_s_a_, w_s_a_ / n_s_a_, v_, prior_, computed_);
   } else {
-    fmt::print(
-        "W(s,a)=[{}] N(s,a)=[{}] Value=[{}] Prior=[{}] Computed=[{}]\n",
-        w_s_a_, n_s_a_, v_, prior_, computed_);
+    fmt::print("W(s,a)=[{}] N(s,a)=[{}] Value=[{}] Prior=[{}] Computed=[{}]\n",
+               w_s_a_, n_s_a_, v_, prior_, computed_);
   }
 }
 

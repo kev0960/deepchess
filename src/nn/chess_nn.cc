@@ -54,6 +54,8 @@ torch::Tensor ChessNNImpl::GetPolicy(torch::Tensor state) {
   // policy : N * (73 * 8 * 8)
   policy = policy.flatten(1);
   policy = fc_policy_->forward(policy);
+  policy = torch::nn::functional::softmax(
+      policy, torch::nn::functional::SoftmaxFuncOptions(1));
 
   return policy;
 }
@@ -75,6 +77,9 @@ torch::Tensor ChessNNImpl::GetValue(torch::Tensor state) {
 
   // value : N * 1
   value = fc_value_->forward(value);
+
+  // To return the value between -1 and 1.
+  value = torch::tanh(value);
 
   return value;
 }

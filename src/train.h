@@ -25,7 +25,9 @@ class Train {
   // Check whether the train_target performs better than current_best.
   bool IsTrainedBetter(Evaluator* target_eval, Evaluator* current_eval);
 
+  // Following two are exposed for the testing.
   void AddExperienceForTesting(std::unique_ptr<Experience> exp);
+  ChessNN GetTrainTarget() { return train_target_; }
 
  private:
   void GenerateExperience(Evaluator* evaluator, int worker_id);
@@ -39,6 +41,7 @@ class Train {
   std::vector<std::unique_ptr<Experience>> experiences_;
 
   std::atomic<int> total_exp_ = 0;
+  std::atomic<int> total_exp_done_ = 0;
 
   std::atomic<int> target_score_ = 0;
 

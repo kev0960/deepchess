@@ -61,6 +61,8 @@ class MCTSNode {
   // Value estimate of the current state.
   float V() const;
 
+  void AddVirtualLoss(float loss);
+
   float Prior() const;
 
   void DumpDebugInfo() const;
@@ -85,6 +87,9 @@ class MCTSNode {
 
   // N(s, a) where s is the previous node.
   int n_s_a_;
+
+  // Virtual loss that is added when computing Q.
+  float virtual_loss_ = 0;
 
   // Child nodes and actions.
   std::vector<std::pair<MCTSNode*, Move>> next_state_actions_;

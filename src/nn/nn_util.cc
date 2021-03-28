@@ -243,7 +243,15 @@ torch::Tensor NormalizePolicy(const GameState& game_state,
   mask = mask.unsqueeze(0).flatten(1);
 
   policy = policy * mask;
+
+  // We are adding small probability to every possible moves to avoid division
+  // by zero (this might be a case where the valid moves are not populated in
+  // the policy vector)
+  mask = mask * 0.00001;
+
+  policy = policy + mask;
   policy = policy / torch::sum(policy);
+
   return policy;
 }
 }  // namespace chess

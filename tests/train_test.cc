@@ -18,6 +18,10 @@ std::unique_ptr<Experience> CreateExperience(
 
 TEST(TrainTest, TrainNN) {
   Config config;
+  config.learning_rate = 0.002;
+  config.weight_decay = 0.004;
+  config.num_layer = 20;
+
   Train trainer(&config);
 
   GameStateBuilder builder;
@@ -43,7 +47,9 @@ TEST(TrainTest, TrainNN) {
                                                     {Move(1, 5, 3, 5), 0.4},
                                                     {Move(1, 7, 3, 7), 0.05}},
                                                    -1));
-  trainer.TrainNN();
+  for (int i = 0; i < 10; i++) {
+    trainer.TrainNN();
+  }
 }
 
 TEST(TrainTest, AgentPlayTest) {
@@ -120,6 +126,7 @@ TEST(TrainTest, BenchmarkTimeUsingPreCompute) {
 }
 */
 
+/*
 TEST(TrainTest, BenchmarkTrainTimeUsingAsyncInference) {
   Config config;
   config.num_epoch = 1;
@@ -146,7 +153,6 @@ TEST(TrainTest, BenchmarkTrainTimeUsingAsyncInference) {
             << std::endl;
 }
 
-/*
 TEST(TrainTest, BenchmarkTrainTimeUsingPrecomputeOnly) {
   Config config;
   config.num_epoch = 1;

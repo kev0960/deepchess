@@ -31,6 +31,40 @@ std::string CoordToString(int row, int col) {
 
 }  // namespace
 
+Move Move::MoveFromString(std::string_view str_move) {
+  if (str_move.size() < 4) {
+    return Move(0, 0, 0, 0);
+  }
+
+  int from_col = str_move[0] - 'a';
+  int from_row = 7 - (str_move[1] - '1');
+
+  int to_col = str_move[2] - 'a';
+  int to_row = 7 - (str_move[3] - '1');
+
+  if (str_move.size() == 5) {
+    Promotion promotion = NO_PROMOTE;
+    switch (str_move[4]) {
+      case 'q':
+        promotion = PROMOTE_QUEEN;
+        break;
+      case 'n':
+        promotion = PROMOTE_KNIGHT;
+        break;
+      case 'b':
+        promotion = PROMOTE_BISHOP;
+        break;
+      case 'r':
+        promotion = PROMOTE_ROOK;
+        break;
+    }
+
+    return Move(from_row, from_col, to_row, to_col, promotion);
+  }
+
+  return Move(from_row, from_col, to_row, to_col);
+}
+
 std::string Move::FromStr() const {
   return CoordToString(From() / 8, From() % 8);
 }

@@ -434,8 +434,8 @@ TEST(ChessNNTest, NormalizePolicy) {
       0,    0,    0,    0,    0,    0,    0,    0      // 1
   };
 
-  EXPECT_TRUE(normalized.index({0}).equal(torch::from_blob(pawn, {8, 8})));
-  EXPECT_TRUE(normalized.index({1}).equal(torch::from_blob(pawn, {8, 8})));
+  EXPECT_TRUE(normalized.index({0}).allclose(torch::from_blob(pawn, {8, 8})));
+  EXPECT_TRUE(normalized.index({1}).allclose(torch::from_blob(pawn, {8, 8})));
 
   float knight[] = {
       0, 0,    0, 0, 0, 0, 0,    0,  // 8
@@ -448,8 +448,8 @@ TEST(ChessNNTest, NormalizePolicy) {
       0, 0.05, 0, 0, 0, 0, 0.05, 0   // 1
   };
 
-  EXPECT_TRUE(normalized.index({56}).equal(torch::from_blob(knight, {8, 8})));
-  EXPECT_TRUE(normalized.index({57}).equal(torch::from_blob(knight, {8, 8})));
+  EXPECT_TRUE(normalized.index({56}).allclose(torch::from_blob(knight, {8, 8})));
+  EXPECT_TRUE(normalized.index({57}).allclose(torch::from_blob(knight, {8, 8})));
 }
 
 }  // namespace

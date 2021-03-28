@@ -45,6 +45,8 @@ Config::Config(std::string file_name) {
   DEFINE_CONFIG(show_self_play_boards, bool);
   DEFINE_CONFIG(use_async_inference, bool);
   DEFINE_CONFIG(precompute_batch_parent_min_visit_count, int);
+  DEFINE_CONFIG(run_server, bool);
+  DEFINE_CONFIG(server_port, std::string);
   DEFINE_CONFIG(use_cuda, bool);
 
   if (!use_cuda) {

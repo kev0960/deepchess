@@ -1,5 +1,6 @@
 {
   "num_epoch" : 4,
+  "num_layer" : 15,
   "num_threads" : 32,
   "num_self_play_game" : 400,
   "total_game_play_for_testing" : 50,

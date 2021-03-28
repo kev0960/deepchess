@@ -116,6 +116,7 @@ MCTSNode* MCTS::Select() {
 
       // Compute Q(s,a) + U(s,a). Note that the state "node" represents is s',
       // not s.
+      fmt::print("Q: {} \n", node->Q());
       float q_plus_u = node->PUCT(current->Visit()) + node->Q();
       if (max_elem == nullptr || q_plus_u > max_score) {
         max_elem = node;
@@ -202,6 +203,11 @@ void MCTS::Backup(MCTSNode* leaf_node) {
     // every time.
     q = q * -1;
   }
+}
+
+void MCTS::BackupVirtual(MCTSNode* leaf_node, float virtual_loss) {
+  // Virtual loss is added so that the same path is not visited again during the
+  // batch MCTS.
 }
 
 torch::Tensor MCTS::GetPolicyVector() const {

@@ -43,6 +43,9 @@ class MCTS {
   // Backup starting from the leaf node with the value.
   void Backup(MCTSNode* leaf_node);
 
+  // Backup using the virtual loss.
+  void BackupVirtual(MCTSNode* leaf_node, float virtual_loss);
+
   void DumpDebugInfo(MCTSNode* node, int depth) const;
 
   // NOTE: Since we shuffle the child nodes, the ordering of moves may be

@@ -19,6 +19,7 @@ target_link_libraries(libdeepchess
   stdc++fs
   "${TORCH_LIBRARIES}"
   absl::strings
+  zmq
   )
 
 target_include_directories(libdeepchess PUBLIC .)

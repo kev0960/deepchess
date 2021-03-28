@@ -6,6 +6,7 @@
 #include "chess.h"
 #include "evaluator.h"
 #include "nn/nn_util.h"
+#include "util.h"
 
 namespace chess {
 namespace {
@@ -32,11 +33,6 @@ std::vector<std::vector<const Experience*>> CreateExperienceBatch(
   }
 
   return batches;
-}
-
-bool IsFileExist(const std::string& file_name) {
-  std::ifstream in(file_name.c_str());
-  return in.is_open();
 }
 
 }  // namespace
@@ -87,6 +83,8 @@ void Train::DoTrain() {
                 "CurrentTrainTarget" + std::to_string(i + 1) + ".pt");
 
     if (IsTrainedBetter(&target_eval, &current_eval)) {
+      fmt::print("New model is better! Saving model at {}", model_name);
+
       // Copy the contents of train_target to current_best via model
       // serialization & deserialization.
       torch::save(train_target_, model_name);
@@ -94,6 +92,7 @@ void Train::DoTrain() {
     }
 
     total_exp_ = 0;
+    total_exp_done_ = 0;
     experiences_.clear();
   }
 }
@@ -106,9 +105,9 @@ void Train::GenerateExperience(Evaluator* evaluator, int worker_id) {
     Agent agent(&dirichlet, config_, evaluator, worker_id);
     agent.Run();
 
-    std::cout << "Current : " << total_exp_ << " is done" << std::endl;
-
     auto& experiences = agent.GetExperience();
+
+    std::cout << "Done : " << total_exp_done_.fetch_add(1) + 1 << std::endl;
 
     exp_guard_.lock();
     experiences_.insert(experiences_.end(),
@@ -162,17 +161,21 @@ void Train::TrainNN() {
     torch::Tensor input_policy = torch::stack(input_policies).flatten(0);
     torch::Tensor target_policy = torch::stack(target_policies).flatten(0);
 
-    torch::Tensor total_loss =
-        -torch::dot(torch::log(target_policy).clamp(-1000), input_policy) +
-        torch::norm(input_values - target_values);
+    torch::Tensor policy_loss =
+        -torch::dot(torch::log(target_policy).clamp(-1000), input_policy);
+    torch::Tensor value_loss = torch::norm(input_values - target_values);
+
+    torch::Tensor total_loss = policy_loss + value_loss;
 
     total_loss.backward();
     optimizer.step();
 
     done += batch.size();
 
-    std::cout << "Loss[" << done << " / " << total
-              << "] : " << total_loss.item<float>() << std::endl;
+    // std::cout << input_policy << std::endl;
+    fmt::print("Loss[{}/{}] : total({}) policy({}) value({}) \n", done, total,
+               total_loss.item<float>(), policy_loss.item<float>(),
+               value_loss.item<float>());
   }
 }
 
@@ -221,6 +224,8 @@ void Train::PlayGamesEachOther(Evaluator* target_eval, Evaluator* current_eval,
       } else if (result == WHITE_WIN) {
         fmt::print("Target [White] Win \n");
         target_score_ += 2;
+      } else if (result == BLACK_WIN) {
+        fmt::print("Target [White] Lost\n");
       }
     } else {
       auto result = chess.PlayChessBetweenAgents(&current, &target);
@@ -230,6 +235,8 @@ void Train::PlayGamesEachOther(Evaluator* target_eval, Evaluator* current_eval,
       } else if (result == BLACK_WIN) {
         fmt::print("Target [Black] Win \n");
         target_score_ += 2;
+      } else if (result == WHITE_WIN) {
+        fmt::print("Target [Black] Lost\n");
       }
     }
   }
