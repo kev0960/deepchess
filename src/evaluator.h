@@ -22,7 +22,7 @@ struct EvaluatorWorkerInfo {
   bool result_is_set = false;
 
   // Hold the result of the inference.
-  float result;
+  std::vector<float> result;
 };
 
 class Evaluator {
@@ -39,6 +39,8 @@ class Evaluator {
   // When used, every other EvaluateAsync that are fired at the similar
   // time will be batched together.
   virtual float EvaluateAsync(const GameState& state, int worker_id);
+  virtual std::vector<float> EvaluateAsyncBatch(
+      const std::vector<const GameState*>& states, int worker_id);
 
   void InferenceWorker();
   void StartInferenceWorker();

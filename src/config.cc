@@ -36,6 +36,9 @@ Config::Config(std::string file_name) {
   DEFINE_CONFIG(max_game_moves_until_draw, int);
   DEFINE_CONFIG(num_mcts_iteration, int);
   DEFINE_CONFIG(mcts_inference_batch_size, int);
+  DEFINE_CONFIG(do_batch_mcts , bool);
+  DEFINE_CONFIG(mcts_batch_leaf_node_size, int);
+  DEFINE_CONFIG(mcts_virtual_loss, float);
   DEFINE_CONFIG(train_batch_size, int);
   DEFINE_CONFIG(num_self_play_game, int);
   DEFINE_CONFIG(learning_rate, float);

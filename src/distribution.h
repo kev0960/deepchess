@@ -1,16 +1,32 @@
-#ifndef DIRICHLET_H
-#define DIRICHLET_H
+#ifndef DISTRIBUTION_H 
+#define DISTRIBUTION_H 
 
 #include <random>
 #include <vector>
+#include <cassert>
 
 namespace chess {
 
-class DirichletDistribution {
+class Distribution {
+ public:
+  virtual std::vector<float> GetDistribution(int n) = 0;
+};
+
+class UniformDistribution : public Distribution {
+  public:
+    std::vector<float> GetDistribution(int n) {
+      assert(n != 0);
+
+      std::vector<float> dist(n, 1.0 / n);
+      return dist;
+    }
+};
+
+class DirichletDistribution : public Distribution {
  public:
   DirichletDistribution(float alpha) : gamma_(alpha), gen_(rd_()) {}
 
-  std::vector<float> GetDistribution(int n) {
+  std::vector<float> GetDistribution(int n) override {
     std::vector<float> dist;
     dist.reserve(n);
 

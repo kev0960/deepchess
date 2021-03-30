@@ -89,11 +89,13 @@ void Train::DoTrain() {
       // serialization & deserialization.
       torch::save(train_target_, model_name);
       torch::load(current_best_, model_name);
+      experiences_.clear();
+    } else {
+      ShuffleVector(experiences_);
     }
 
     total_exp_ = 0;
     total_exp_done_ = 0;
-    experiences_.clear();
   }
 }
 
@@ -203,7 +205,7 @@ bool Train::IsTrainedBetter(Evaluator* target_eval, Evaluator* current_eval) {
 
 void Train::PlayGamesEachOther(Evaluator* target_eval, Evaluator* current_eval,
                                int worker_id) {
-  DirichletDistribution no_noise(0);
+  UniformDistribution no_noise;
 
   Agent target(&no_noise, config_, target_eval, worker_id);
   Agent current(&no_noise, config_, current_eval, worker_id);

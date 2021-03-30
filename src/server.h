@@ -17,7 +17,7 @@ namespace chess {
 class Server {
  public:
   Server(Config* config)
-      : config_(config), dirichlet_(0), chess_nn_(config->num_layer) {
+      : config_(config), chess_nn_(config->num_layer) {
     chess_nn_->to(config_->device);
   }
 
@@ -40,7 +40,7 @@ class Server {
 
   Config* config_;
 
-  DirichletDistribution dirichlet_;
+  UniformDistribution dist_;
 
   ChessNN chess_nn_;
   std::unique_ptr<Evaluator> evaluator_;

@@ -126,12 +126,12 @@ TEST(TrainTest, BenchmarkTimeUsingPreCompute) {
 }
 */
 
-/*
 TEST(TrainTest, BenchmarkTrainTimeUsingAsyncInference) {
   Config config;
   config.num_epoch = 1;
-  config.num_threads = 32;
+  config.num_threads = 16;
   config.num_self_play_game = 32;
+  config.do_batch_mcts = true;
   config.num_mcts_iteration = 600;
   config.mcts_inference_batch_size = 64;
   config.use_async_inference = true;
@@ -153,6 +153,7 @@ TEST(TrainTest, BenchmarkTrainTimeUsingAsyncInference) {
             << std::endl;
 }
 
+/*
 TEST(TrainTest, BenchmarkTrainTimeUsingPrecomputeOnly) {
   Config config;
   config.num_epoch = 1;

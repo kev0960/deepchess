@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "config.h"
-#include "dirichlet.h"
+#include "distribution.h"
 #include "evaluator.h"
 #include "game_state.h"
 #include "nn/chess_nn.h"
@@ -28,7 +28,7 @@ struct Experience {
 
 class Agent {
  public:
-  Agent(DirichletDistribution* dirichlet, Config* config, Evaluator* evaluator,
+  Agent(Distribution* dist, Config* config, Evaluator* evaluator,
         int worker_id);
 
   // Conduct the self play and gain experiences.
@@ -47,7 +47,7 @@ class Agent {
 
   std::vector<std::unique_ptr<Experience>> experiences_;
 
-  DirichletDistribution* dirichlet_;
+  Distribution* dist_;
   Config* config_;
   Evaluator* evaluator_;
 

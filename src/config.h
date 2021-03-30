@@ -41,8 +41,14 @@ class Config {
   // Size of the batch for the MCTS roll-out inferencing.
   int mcts_inference_batch_size = 20;
 
+  // Whether to do the batch MCTS.
+  bool do_batch_mcts = false;
+
   // Size of the batch to request inferencing rollouts.
-  int mcts_batch_size = 5;
+  int mcts_batch_leaf_node_size = 20;
+
+  // Size of the virtual loss per visit.
+  float mcts_virtual_loss = -0.05;
 
   // Size of the batch during training.
   int train_batch_size = 40;

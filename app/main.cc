@@ -1,5 +1,4 @@
 #include "chess.h"
-#include "dirichlet.h"
 #include "train.h"
 
 int main() {

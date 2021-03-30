@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "config.h"
-#include "dirichlet.h"
+#include "distribution.h"
 #include "evaluator.h"
 #include "mcts_node.h"
 
@@ -13,8 +13,8 @@ namespace chess {
 class MCTS {
  public:
   // Create MCTS with starting game state.
-  MCTS(const GameState* state, Evaluator* evaluator,
-       DirichletDistribution* dirichlet_dist, Config* config, int worker_id);
+  MCTS(const GameState* state, Evaluator* evaluator, Distribution* dist,
+       Config* config, int worker_id);
 
   void RunMCTS();
 
@@ -30,7 +30,13 @@ class MCTS {
 
   void DumpDebugInfo() const;
 
+  // Show the path from the root to the node.
+  void ShowPath(MCTSNode* node) const;
+
  private:
+  void DoSingleRun();
+  void DoBatchRun();
+
   // Select the node to expand.
   MCTSNode* Select();
 
@@ -46,6 +52,9 @@ class MCTS {
   // Backup using the virtual loss.
   void BackupVirtual(MCTSNode* leaf_node, float virtual_loss);
 
+  // Clear virtual loss set by leaf node.
+  void ClearVirtual(MCTSNode* leaf_node);
+
   void DumpDebugInfo(MCTSNode* node, int depth) const;
 
   // NOTE: Since we shuffle the child nodes, the ordering of moves may be
@@ -54,7 +63,7 @@ class MCTS {
 
   MCTSNode* root_;
   Evaluator* evaluator_;
-  DirichletDistribution* dirichlet_dist_;
+  Distribution* dist_;
 
   Config* config_;
   int current_iter_ = 0;

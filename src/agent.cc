@@ -9,8 +9,8 @@ namespace {
 
 std::pair<Experience, Move> GetMoveForSelfPlay(
     std::unique_ptr<GameState> current, Evaluator* evaluator,
-    DirichletDistribution* dirichlet, Config* config, int worker_id) {
-  MCTS mcts(current.get(), evaluator, dirichlet, config, worker_id);
+    Distribution* dist, Config* config, int worker_id) {
+  MCTS mcts(current.get(), evaluator, dist, config, worker_id);
   mcts.RunMCTS();
 
   Move best_move = mcts.MoveToMake(/*choose_best_move=*/false);
@@ -21,9 +21,9 @@ std::pair<Experience, Move> GetMoveForSelfPlay(
 
 }  // namespace
 
-Agent::Agent(DirichletDistribution* dirichlet, Config* config,
-             Evaluator* evaluator, int worker_id)
-    : dirichlet_(dirichlet),
+Agent::Agent(Distribution* dist, Config* config, Evaluator* evaluator,
+             int worker_id)
+    : dist_(dist),
       config_(config),
       evaluator_(evaluator),
       worker_id_(worker_id) {}
@@ -46,8 +46,8 @@ void Agent::DoSelfPlay() {
       break;
     }
 
-    auto [experience, move] = GetMoveForSelfPlay(
-        std::move(current), evaluator_, dirichlet_, config_, worker_id_);
+    auto [experience, move] = GetMoveForSelfPlay(std::move(current), evaluator_,
+                                                 dist_, config_, worker_id_);
     experiences_.push_back(std::make_unique<Experience>(std::move(experience)));
 
     current =
@@ -91,7 +91,7 @@ void Agent::DoSelfPlay() {
 }
 
 Move Agent::GetBestMove(const GameState& game_state) const {
-  MCTS mcts(&game_state, evaluator_, dirichlet_, config_, worker_id_);
+  MCTS mcts(&game_state, evaluator_, dist_, config_, worker_id_);
   mcts.RunMCTS();
 
   return mcts.MoveToMake(/*choose_best_move=*/true);

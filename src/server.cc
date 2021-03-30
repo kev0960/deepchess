@@ -46,7 +46,7 @@ void Server::RunServer() {
   evaluator_ = std::make_unique<Evaluator>(chess_nn_, config_);
   evaluator_->StartInferenceWorker();
 
-  agent_ = std::make_unique<Agent>(&dirichlet_, config_, evaluator_.get(), 0);
+  agent_ = std::make_unique<Agent>(&dist_, config_, evaluator_.get(), 0);
 
   zmq::context_t context(1);
   zmq::socket_t socket(context, ZMQ_REP);

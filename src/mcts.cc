@@ -1,5 +1,8 @@
 #include "mcts.h"
 
+#include <absl/strings/str_join.h>
+#include <fmt/ranges.h>
+
 #include "nn/nn_util.h"
 
 namespace chess {
@@ -65,10 +68,10 @@ void PreComputeBatches(
 
 }  // namespace
 
-MCTS::MCTS(const GameState* state, Evaluator* evaluator,
-           DirichletDistribution* dirichlet_dist, Config* config, int worker_id)
+MCTS::MCTS(const GameState* state, Evaluator* evaluator, Distribution* dist,
+           Config* config, int worker_id)
     : evaluator_(evaluator),
-      dirichlet_dist_(dirichlet_dist),
+      dist_(dist),
       config_(config),
       worker_id_(worker_id) {
   nodes_.push_back(std::make_unique<MCTSNode>(
@@ -79,6 +82,73 @@ MCTS::MCTS(const GameState* state, Evaluator* evaluator,
 
 // Run selection - eval - expand - backup once.
 void MCTS::RunMCTS() {
+  if (config_->do_batch_mcts) {
+    DoBatchRun();
+  } else {
+    DoSingleRun();
+  }
+}
+
+void MCTS::DoBatchRun() {
+  const int batch_leaf_size = config_->mcts_batch_leaf_node_size;
+  while (current_iter_ < config_->num_mcts_iteration) {
+    std::vector<MCTSNode*> batch_leaf_nodes;
+    batch_leaf_nodes.reserve(batch_leaf_size);
+
+    int current_batch_count = 0;
+    while (current_batch_count < batch_leaf_size &&
+           current_iter_ < config_->num_mcts_iteration) {
+      MCTSNode* leaf = Select();
+
+      Expand(leaf);
+
+      // If the leaf node is already computed, then no need to use the virtual
+      // loss.
+      if (leaf->Computed()) {
+        // Evaluate the current position from the perspective of the current
+        // player of leaf. If it is good, then it means it is bad for the
+        // previous player. So when we backpropagate, we alternate the sign of
+        // q.
+        float q = Evaluate(leaf);
+        leaf->SetValueOfThisState(q);
+
+        Backup(leaf);
+      } else {
+        // If the node is not computed yet, then we add to the batch_nodes and
+        // specify the virtual loss instead.
+        BackupVirtual(leaf, config_->mcts_virtual_loss);
+        batch_leaf_nodes.push_back(leaf);
+        current_batch_count++;
+      }
+
+      current_iter_++;
+    }
+
+    if (!batch_leaf_nodes.empty()) {
+      std::vector<const GameState*> states;
+      states.reserve(batch_leaf_nodes.size());
+
+      for (MCTSNode* leaf_node : batch_leaf_nodes) {
+        states.push_back(&leaf_node->State());
+      }
+
+      std::vector<float> q_s;
+      if (config_->use_async_inference) {
+        q_s = evaluator_->EvaluateAsyncBatch(states, worker_id_);
+      } else {
+        q_s = evaluator_->EvalulateBatch(states);
+      }
+
+      for (size_t i = 0; i < q_s.size(); i++) {
+        batch_leaf_nodes[i]->SetValueOfThisState(q_s[i]);
+        Backup(batch_leaf_nodes[i]);
+        ClearVirtual(batch_leaf_nodes[i]);
+      }
+    }
+  }
+}
+
+void MCTS::DoSingleRun() {
   for (; current_iter_ < config_->num_mcts_iteration; current_iter_++) {
     MCTSNode* leaf = Select();
 
@@ -116,7 +186,6 @@ MCTSNode* MCTS::Select() {
 
       // Compute Q(s,a) + U(s,a). Note that the state "node" represents is s',
       // not s.
-      fmt::print("Q: {} \n", node->Q());
       float q_plus_u = node->PUCT(current->Visit()) + node->Q();
       if (max_elem == nullptr || q_plus_u > max_score) {
         max_elem = node;
@@ -140,12 +209,11 @@ void MCTS::Expand(MCTSNode* node) {
   }
 
   std::vector<Move> possible_moves = state.GetLegalMoves();
-  std::vector<float> dirichlet_dist =
-      dirichlet_dist_->GetDistribution(possible_moves.size());
+  std::vector<float> dist = dist_->GetDistribution(possible_moves.size());
 
   for (size_t i = 0; i < possible_moves.size(); i++) {
     const Move& move = possible_moves[i];
-    float noise = dirichlet_dist[i];
+    float noise = dist[i];
 
     nodes_.push_back(
         std::make_unique<MCTSNode>(std::make_unique<GameState>(&state, move),
@@ -205,9 +273,23 @@ void MCTS::Backup(MCTSNode* leaf_node) {
   }
 }
 
+void MCTS::ClearVirtual(MCTSNode* leaf_node) {
+  MCTSNode* current = leaf_node;
+  while (current) {
+    current->ClearVirtualLoss();
+    current = current->Parent();
+  }
+}
+
 void MCTS::BackupVirtual(MCTSNode* leaf_node, float virtual_loss) {
   // Virtual loss is added so that the same path is not visited again during the
   // batch MCTS.
+  MCTSNode* current = leaf_node;
+
+  while (current) {
+    current->AddVirtualLoss(virtual_loss);
+    current = current->Parent();
+  }
 }
 
 torch::Tensor MCTS::GetPolicyVector() const {
@@ -266,6 +348,31 @@ Move MCTS::MoveToMake(bool choose_best_move) const {
   return move_and_cumulative_count[0].first;
 }
 
+void MCTS::ShowPath(MCTSNode* node) const {
+  std::vector<MCTSNode*> path;
+
+  MCTSNode* current = node;
+  while (current) {
+    path.push_back(current);
+    current = current->Parent();
+  }
+
+  std::vector<std::string> moves;
+  for (int i = path.size() - 1; i >= 1; i--) {
+    // Find a path from path[i] to path[i - 1];
+    const auto& children = path[i]->Children();
+    for (const auto& [node, move] : children) {
+      if (node == path[i - 1]) {
+        auto s = fmt::format("{} (Q {} N {} VL {})", move.Str(), node->Q(),
+                             node->Visit(), node->VirtualLoss());
+        moves.push_back(s);
+      }
+    }
+  }
+
+  fmt::print("[Worker {}] {} \n", worker_id_, absl::StrJoin(moves, " -> "));
+}
+
 void MCTS::DumpDebugInfo() const { DumpDebugInfo(root_, 0); }
 
 void MCTS::DumpDebugInfo(MCTSNode* node, int depth) const {
@@ -274,9 +381,10 @@ void MCTS::DumpDebugInfo(MCTSNode* node, int depth) const {
   }
 
   if (node == root_) {
-    fmt::print("{:02} Root ----\n", depth);
+    fmt::print("{:02} Root {} ----\n", depth, node->Q());
   } else {
-    fmt::print("{:02} {}   ----\n", depth, node->State().LastMove().Str());
+    fmt::print("{:02} {} {}  ----\n", depth, node->State().LastMove().Str(),
+               node->Q());
   }
 
   node->DumpDebugInfo();

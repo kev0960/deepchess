@@ -34,20 +34,28 @@ std::vector<std::pair<MCTSNode*, Move>>& MCTSNode::Children() {
 }
 
 float MCTSNode::PUCT(int total_visit) const {
-  return prior_ * std::sqrt(total_visit) / (1 + n_s_a_);
+  return prior_ * std::sqrt(total_visit) / (1 + Visit());
 }
 
 const GameState& MCTSNode::State() const { return *state_; }
 
 MCTSNode* MCTSNode::Parent() const { return parent_; }
 
-int MCTSNode::Visit() const { return n_s_a_; }
+int MCTSNode::Visit() const { return n_s_a_ + virtual_visit_; }
 
-float MCTSNode::Q() const { return w_s_a_ / n_s_a_ + virtual_loss_; }
+float MCTSNode::Q() const { return w_s_a_ / Visit() + virtual_loss_; }
 
 float MCTSNode::V() const { return v_; }
 
-void MCTSNode::AddVirtualLoss(float loss) { virtual_loss_ += loss; }
+void MCTSNode::AddVirtualLoss(float loss) {
+  virtual_loss_ += loss;
+  virtual_visit_++;
+}
+
+void MCTSNode::ClearVirtualLoss() {
+  virtual_loss_ = 0;
+  virtual_visit_ = 0;
+}
 
 float MCTSNode::Prior() const { return prior_; }
 
