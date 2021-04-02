@@ -16,12 +16,13 @@ namespace chess {
 // Server where the user can play.
 class Server {
  public:
-  Server(Config* config)
-      : config_(config), chess_nn_(config->num_layer) {
+  Server(Config* config) : config_(config), chess_nn_(config->num_layer) {
     chess_nn_->to(config_->device);
-  }
 
-  void RunServer();
+    if (config->run_server) {
+      RunServer();
+    }
+  }
 
   absl::StatusOr<std::string> HandleRequest(std::string_view request);
 
@@ -34,6 +35,8 @@ class Server {
   absl::StatusOr<std::string> DoMove(const std::string& game_id, Move move);
 
  private:
+  void RunServer();
+
   // Mapping between user_id to the current matches.
   std::unordered_map<std::string, std::vector<std::unique_ptr<GameState>>>
       matches_;

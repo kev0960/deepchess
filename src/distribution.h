@@ -1,9 +1,9 @@
-#ifndef DISTRIBUTION_H 
-#define DISTRIBUTION_H 
+#ifndef DISTRIBUTION_H
+#define DISTRIBUTION_H
 
+#include <cassert>
 #include <random>
 #include <vector>
-#include <cassert>
 
 namespace chess {
 
@@ -13,13 +13,10 @@ class Distribution {
 };
 
 class UniformDistribution : public Distribution {
-  public:
-    std::vector<float> GetDistribution(int n) {
-      assert(n != 0);
-
-      std::vector<float> dist(n, 1.0 / n);
-      return dist;
-    }
+ public:
+  std::vector<float> GetDistribution(int n) {
+    return std::vector<float>(n, 1.0);
+  }
 };
 
 class DirichletDistribution : public Distribution {

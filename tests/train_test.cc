@@ -76,6 +76,32 @@ TEST(TrainTest, AgentPlayTest) {
 }
 
 /*
+TEST(TrainTest, AgentPlayTest2) {
+  Config config;
+  config.num_mcts_iteration = 600;
+  config.total_game_play_for_testing = 1;
+  config.max_game_moves_until_draw = 300;
+  config.current_best_target_score = 10;
+  config.show_self_play_boards = true;
+  config.do_batch_mcts = true;
+
+  ChessNN current(15);
+  current->to(config.device);
+
+  ChessNN target(15);
+  torch::load(target, "CurrentTrainTarget1.pt");
+  target->to(config.device);
+
+  Evaluator target_eval(target, &config);
+  target_eval.StartInferenceWorker();
+
+  Evaluator current_eval(current, &config);
+  current_eval.StartInferenceWorker();
+
+  Train trainer(&config);
+  trainer.IsTrainedBetter(&target_eval, &current_eval);
+}
+
 TEST(TrainTest, BenchmarkTimeUsingAsync) {
   Config config;
   config.num_threads = 32;
@@ -134,6 +160,7 @@ TEST(TrainTest, BenchmarkTrainTimeUsingAsyncInference) {
   config.do_batch_mcts = true;
   config.num_mcts_iteration = 600;
   config.mcts_inference_batch_size = 64;
+  config.mcts_batch_leaf_node_size = 8;
   config.use_async_inference = true;
   config.total_game_play_for_testing = 50;
   config.max_game_moves_until_draw = 20;

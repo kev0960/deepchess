@@ -1,4 +1,5 @@
 #include "chess.h"
+#include "server.h"
 #include "train.h"
 
 int main() {
@@ -9,17 +10,22 @@ int main() {
   chess::Config config("../config.json");
   config.PrintConfig();
 
+  chess::Server server(&config);
+
   chess::Train trainer(&config);
   trainer.DoTrain();
 
+  
   /*
-  chess::Chess game;
-  chess::ChessNN chess_nn(10, &device_manager);
-  chess_nn->to(device);
+  chess::Chess game(&config);
+  chess::ChessNN chess_nn(15);
+  chess_nn->to(config.device);
 
-  chess::DirichletDistribution dist(0.3);
+  chess::UniformDistribution dist;
+  chess::Evaluator eval(chess_nn, &config);
+  eval.StartInferenceWorker();
 
-  chess::Agent agent(&chess_nn, &dist);
+  chess::Agent agent(&dist, &config, &eval, 0);
   auto result = game.PlayChessWithHuman(&agent, chess::WHITE);
   switch (result) {
     case chess::DRAW:
@@ -32,5 +38,5 @@ int main() {
       std::cout << "Black won! \n";
       break;
   }
-  */
+  */  
 }

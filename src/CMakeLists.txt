@@ -19,6 +19,7 @@ target_link_libraries(libdeepchess
   stdc++fs
   "${TORCH_LIBRARIES}"
   absl::strings
+  absl::statusor
   zmq
   )
 

@@ -76,6 +76,9 @@ class Config {
   // precompute batches.
   int precompute_batch_parent_min_visit_count = 2;
 
+  // Number of async workers in Evaluator.
+  int evaluator_worker_count = 1;
+  
   // Model name to import.
   std::string existing_model_name = "";
 

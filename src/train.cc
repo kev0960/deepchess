@@ -58,6 +58,8 @@ void Train::DoTrain() {
     train_target_->to(config_->device);
 
     auto start = std::chrono::high_resolution_clock::now();
+    exp_gen_start_ = std::chrono::high_resolution_clock::now();
+
     std::vector<std::thread> exp_generators;
     for (int i = 0; i < config_->num_threads; i++) {
       exp_generators.push_back(
@@ -109,7 +111,13 @@ void Train::GenerateExperience(Evaluator* evaluator, int worker_id) {
 
     auto& experiences = agent.GetExperience();
 
-    std::cout << "Done : " << total_exp_done_.fetch_add(1) + 1 << std::endl;
+    auto game_end = std::chrono::high_resolution_clock::now();
+    auto took_sec = std::chrono::duration_cast<std::chrono::seconds>(
+        game_end - exp_gen_start_);
+
+    int done = total_exp_done_.fetch_add(1) + 1;
+    fmt::print("Done : {}/{}, Average {} seconds per game \n", done,
+               config_->num_self_play_game, took_sec.count() / (float)done);
 
     exp_guard_.lock();
     experiences_.insert(experiences_.end(),

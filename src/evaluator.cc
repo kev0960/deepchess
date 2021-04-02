@@ -1,5 +1,7 @@
 #include "evaluator.h"
 
+#include <fmt/ranges.h>
+
 #include "nn/chess_nn.h"
 #include "nn/nn_util.h"
 
@@ -169,7 +171,19 @@ std::vector<float> Evaluator::EvaluateAsyncBatch(
   worker_info_[worker_id].cv_inference.wait(
       lk, [&worker_info]() { return worker_info.result_is_set; });
 
-  return worker_info.result;
+  size_t score_index = 0, batch_index = 0;
+  while (score_index < states.size()) {
+    if (is_set[score_index]) {
+      score_index++;
+      continue;
+    }
+
+    scores[score_index] = worker_info.result[batch_index];
+    score_index++;
+    batch_index++;
+  }
+
+  return scores;
 }
 
 void Evaluator::InferenceWorker() {
@@ -228,7 +242,7 @@ void Evaluator::InferenceWorker() {
 
 void Evaluator::StartInferenceWorker() {
   // TODO Does multiple inference worker work?
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < config_->evaluator_worker_count; i++) {
     inference_workers_.push_back(
         std::thread(&Evaluator::InferenceWorker, this));
   }

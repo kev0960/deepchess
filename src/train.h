@@ -49,6 +49,8 @@ class Train {
   std::atomic<int> current_game_playing_ = 0;
 
   Config* config_;
+
+  std::chrono::time_point<std::chrono::high_resolution_clock> exp_gen_start_;
 };
 
 }  // namespace chess
