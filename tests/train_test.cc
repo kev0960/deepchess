@@ -8,21 +8,15 @@
 namespace chess {
 namespace {
 
-std::unique_ptr<Experience> CreateExperience(
-    std::unique_ptr<GameState> state, std::vector<std::pair<Move, float>> move,
-    float reward) {
-  auto policy = MoveToTensor(move).unsqueeze(0).flatten(1);
-
-  return std::make_unique<Experience>(std::move(state), policy, reward);
-}
-
 TEST(TrainTest, TrainNN) {
   Config config;
   config.learning_rate = 0.002;
   config.weight_decay = 0.004;
   config.num_layer = 20;
+  config.existing_model_name = "SomeModelForTesting.pt";
 
-  Train trainer(&config);
+  ServerContext server_context(&config);
+  Train trainer(&config, &server_context);
 
   GameStateBuilder builder;
   builder
@@ -59,16 +53,18 @@ TEST(TrainTest, AgentPlayTest) {
   config.max_game_moves_until_draw = 10;
   config.current_best_target_score = 10;
   config.show_self_play_boards = false;
+  config.existing_model_name = "SomeModelForTesting.pt";
 
-  Train trainer(&config);
+  ServerContext server_context(&config);
+  Train trainer(&config, &server_context);
 
   ChessNN nn(10);
   nn->to(config.device);
 
-  Evaluator target_eval(nn, &config);
+  Evaluator target_eval(nn, &config, /*worker_manager=*/nullptr);
   target_eval.StartInferenceWorker();
 
-  Evaluator current_eval(nn, &config);
+  Evaluator current_eval(nn, &config, /*worker_manager=*/nullptr);
   current_eval.StartInferenceWorker();
 
   // Every match should be draw.
@@ -156,19 +152,20 @@ TEST(TrainTest, BenchmarkTrainTimeUsingAsyncInference) {
   Config config;
   config.num_epoch = 1;
   config.num_threads = 16;
-  config.num_self_play_game = 32;
+  config.num_self_play_game = 16;
   config.do_batch_mcts = true;
-  config.num_mcts_iteration = 600;
+  config.num_mcts_iteration = 300;
   config.mcts_inference_batch_size = 64;
   config.mcts_batch_leaf_node_size = 8;
   config.use_async_inference = true;
-  config.total_game_play_for_testing = 50;
-  config.max_game_moves_until_draw = 20;
+  config.total_game_play_for_testing = 16;
+  config.max_game_moves_until_draw = 10;
   config.show_self_play_boards = false;
   config.precompute_batch_parent_min_visit_count = 3;
   config.existing_model_name = "SomeModelForTesting.pt";
 
-  Train trainer(&config);
+  ServerContext server_context(&config);
+  Train trainer(&config, &server_context);
 
   auto start = std::chrono::high_resolution_clock::now();
 

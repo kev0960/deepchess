@@ -186,7 +186,7 @@ std::vector<float> Evaluator::EvaluateAsyncBatch(
   return scores;
 }
 
-void Evaluator::InferenceWorker() {
+void Evaluator::InferenceWorker(int worker_id) {
   while (!should_finish_inference_) {
     std::unique_lock<std::mutex> lk(batch_queue_m_);
     batch_queue_cv_.wait(lk, [this]() {
@@ -211,7 +211,12 @@ void Evaluator::InferenceWorker() {
     }
 
     torch::Tensor batch_tensor = torch::cat(batches).to(config_->device);
-    assert(batch_tensor.sizes()[1] == 119);
+
+    if (worker_manager_ != nullptr) {
+      worker_manager_->GetInferenceWorkerInfo(worker_id)
+          .total_inference_batch_size += batch_tensor.sizes()[0];
+      worker_manager_->GetInferenceWorkerInfo(worker_id).total_num_inference++;
+    }
 
     torch::Tensor value_tensor = chess_net_->GetValue(batch_tensor);
 
@@ -244,7 +249,7 @@ void Evaluator::StartInferenceWorker() {
   // TODO Does multiple inference worker work?
   for (int i = 0; i < config_->evaluator_worker_count; i++) {
     inference_workers_.push_back(
-        std::thread(&Evaluator::InferenceWorker, this));
+        std::thread(&Evaluator::InferenceWorker, this, i));
   }
 }
 

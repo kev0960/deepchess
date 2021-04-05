@@ -20,4 +20,4 @@ add_executable(chesstest ${SRC_FILES})
 
 # Link test executable against gtest & gtest_main
 target_link_libraries(chesstest libdeepchess gtest gmock gtest_main 
-  fmt::fmt absl::strings)
+  fmt::fmt absl::strings nlohmann_json::nlohmann_json)

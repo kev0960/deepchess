@@ -47,10 +47,12 @@ void Train::DoTrain() {
     torch::save(current_best_, model_name);
   }
 
-  Evaluator target_eval(train_target_, config_);
+  Evaluator target_eval(train_target_, config_,
+                        server_context_->GetWorkerManager());
   target_eval.StartInferenceWorker();
 
-  Evaluator current_eval(current_best_, config_);
+  Evaluator current_eval(current_best_, config_,
+                         server_context_->GetWorkerManager());
   current_eval.StartInferenceWorker();
 
   for (int i = 0; i < config_->num_epoch; i++) {
@@ -85,7 +87,7 @@ void Train::DoTrain() {
                 "CurrentTrainTarget" + std::to_string(i + 1) + ".pt");
 
     if (IsTrainedBetter(&target_eval, &current_eval)) {
-      fmt::print("New model is better! Saving model at {}", model_name);
+      fmt::print("New model is better! Saving model at {} \n", model_name);
 
       // Copy the contents of train_target to current_best via model
       // serialization & deserialization.
@@ -106,7 +108,9 @@ void Train::GenerateExperience(Evaluator* evaluator, int worker_id) {
 
   while (total_exp_.fetch_add(1) < config_->num_self_play_game) {
     torch::NoGradGuard guard;
-    Agent agent(&dirichlet, config_, evaluator, worker_id);
+
+    Agent agent(&dirichlet, config_, evaluator,
+                server_context_->GetWorkerManager(), worker_id);
     agent.Run();
 
     auto& experiences = agent.GetExperience();
@@ -124,6 +128,10 @@ void Train::GenerateExperience(Evaluator* evaluator, int worker_id) {
                         std::make_move_iterator(experiences.begin()),
                         std::make_move_iterator(experiences.end()));
     exp_guard_.unlock();
+
+    server_context_->GetWorkerManager()
+        ->GetWorkerInfo(worker_id)
+        .total_game_played++;
   }
 }
 
@@ -215,8 +223,10 @@ void Train::PlayGamesEachOther(Evaluator* target_eval, Evaluator* current_eval,
                                int worker_id) {
   UniformDistribution no_noise;
 
-  Agent target(&no_noise, config_, target_eval, worker_id);
-  Agent current(&no_noise, config_, current_eval, worker_id);
+  Agent target(&no_noise, config_, target_eval,
+               server_context_->GetWorkerManager(), worker_id);
+  Agent current(&no_noise, config_, current_eval,
+                server_context_->GetWorkerManager(), worker_id);
 
   Chess chess(config_);
 

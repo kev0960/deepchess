@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "absl/strings/str_split.h"
+#include "agent.h"
 #include "board.h"
 #include "game_state.h"
 
@@ -40,6 +41,10 @@ class GameStateBuilder {
 // PPPPPPPP
 // RNBQKBNR
 Board BoardFromNotation(std::string_view notation);
+
+std::unique_ptr<Experience> CreateExperience(
+    std::unique_ptr<GameState> state, std::vector<std::pair<Move, float>> move,
+    float reward);
 
 }  // namespace chess
 

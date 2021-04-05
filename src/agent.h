@@ -10,6 +10,7 @@
 #include "evaluator.h"
 #include "game_state.h"
 #include "nn/chess_nn.h"
+#include "worker_manager.h"
 
 namespace chess {
 
@@ -29,7 +30,7 @@ struct Experience {
 class Agent {
  public:
   Agent(Distribution* dist, Config* config, Evaluator* evaluator,
-        int worker_id);
+        WorkerManager* worker_manager, int worker_id);
 
   // Conduct the self play and gain experiences.
   void Run();
@@ -50,6 +51,7 @@ class Agent {
   Distribution* dist_;
   Config* config_;
   Evaluator* evaluator_;
+  WorkerManager* worker_manager_;
 
   // ID of the current thread worker.
   int worker_id_;

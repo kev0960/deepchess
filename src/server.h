@@ -10,18 +10,18 @@
 #include "chess.h"
 #include "config.h"
 #include "game_state.h"
+#include "server_context.h"
 
 namespace chess {
 
 // Server where the user can play.
 class Server {
  public:
-  Server(Config* config) : config_(config), chess_nn_(config->num_layer) {
+  Server(Config* config, ServerContext* server_context)
+      : config_(config),
+        chess_nn_(config->num_layer),
+        server_context_(server_context) {
     chess_nn_->to(config_->device);
-
-    if (config->run_server) {
-      RunServer();
-    }
   }
 
   absl::StatusOr<std::string> HandleRequest(std::string_view request);
@@ -34,8 +34,18 @@ class Server {
   // Client makes the move.
   absl::StatusOr<std::string> DoMove(const std::string& game_id, Move move);
 
- private:
+  // Handle WorkerInfo request.
+  absl::StatusOr<std::string> HandleWorkerInfo();
+
+  // Handle GameInfo request.
+  absl::StatusOr<std::string> HandleGameInfo(
+      std::optional<std::string> game_id);
+
+  // Start the server.
   void RunServer();
+
+ private:
+  void ServerRunner();
 
   // Mapping between user_id to the current matches.
   std::unordered_map<std::string, std::vector<std::unique_ptr<GameState>>>
@@ -48,6 +58,9 @@ class Server {
   ChessNN chess_nn_;
   std::unique_ptr<Evaluator> evaluator_;
   std::unique_ptr<Agent> agent_;
+
+  ServerContext* server_context_;
+  std::unique_ptr<std::thread> server_runner_;
 };
 
 }  // namespace chess

@@ -22,10 +22,11 @@ std::pair<Experience, Move> GetMoveForSelfPlay(
 }  // namespace
 
 Agent::Agent(Distribution* dist, Config* config, Evaluator* evaluator,
-             int worker_id)
+             WorkerManager* worker_manager, int worker_id)
     : dist_(dist),
       config_(config),
       evaluator_(evaluator),
+      worker_manager_(worker_manager),
       worker_id_(worker_id) {}
 
 void Agent::Run() { DoSelfPlay(); }
@@ -53,6 +54,11 @@ void Agent::DoSelfPlay() {
     current =
         std::make_unique<GameState>(experiences_.back()->state.get(), move);
     num_move++;
+
+    if (worker_manager_ != nullptr) {
+      worker_manager_->GetWorkerInfo(worker_id_).current_game_total_move =
+          num_move;
+    }
 
     if (config_->show_self_play_boards) {
       fmt::print("Worker [{}] (Moves: {}) ------ \n", worker_id_, num_move);

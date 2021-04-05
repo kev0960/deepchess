@@ -1,5 +1,6 @@
 #include "chess.h"
 #include "server.h"
+#include "server_context.h"
 #include "train.h"
 
 int main() {
@@ -10,12 +11,16 @@ int main() {
   chess::Config config("../config.json");
   config.PrintConfig();
 
-  chess::Server server(&config);
+  chess::ServerContext server_context(&config);
+  chess::Server server(&config, &server_context);
 
-  chess::Train trainer(&config);
+  if (config.run_server) {
+    server.RunServer();
+  }
+
+  chess::Train trainer(&config, &server_context);
   trainer.DoTrain();
 
-  
   /*
   chess::Chess game(&config);
   chess::ChessNN chess_nn(15);
@@ -38,5 +43,5 @@ int main() {
       std::cout << "Black won! \n";
       break;
   }
-  */  
+  */
 }

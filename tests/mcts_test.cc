@@ -19,7 +19,7 @@ TEST_F(MCTSTest, CheckMoves) {
   ChessNN nn(10);
   nn->to(config.device);
 
-  Evaluator eval(nn, &config);
+  Evaluator eval(nn, &config, /*worker_manager=*/nullptr);
   UniformDistribution dist;
 
   GameStateBuilder builder;
@@ -48,7 +48,7 @@ TEST_F(MCTSTest, AsyncEval) {
   ChessNN nn(10);
   nn->to(config.device);
 
-  Evaluator eval(nn, &config);
+  Evaluator eval(nn, &config, /*worker_manager=*/nullptr);
   eval.StartInferenceWorker();
 
   UniformDistribution dist;
@@ -83,7 +83,7 @@ TEST_F(MCTSTest, BatchMCTSNotAsync) {
   ChessNN nn(10);
   nn->to(config.device);
 
-  Evaluator eval(nn, &config);
+  Evaluator eval(nn, &config, /*worker_manager=*/nullptr);
   eval.StartInferenceWorker();
 
   UniformDistribution dist;
@@ -120,7 +120,7 @@ TEST_F(MCTSTest, BatchMCTSAsync) {
   ChessNN nn(10);
   nn->to(config.device);
 
-  Evaluator eval(nn, &config);
+  Evaluator eval(nn, &config, /*worker_manager=*/nullptr);
   eval.StartInferenceWorker();
 
   UniformDistribution dist;

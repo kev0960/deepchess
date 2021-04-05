@@ -4,15 +4,17 @@
 #include "agent.h"
 #include "config.h"
 #include "nn/chess_nn.h"
+#include "server_context.h"
 
 namespace chess {
 
 class Train {
  public:
-  Train(Config* config)
+  Train(Config* config, ServerContext* server_context)
       : current_best_(config->num_layer),
         train_target_(config->num_layer),
-        config_(config) {
+        config_(config),
+        server_context_(server_context) {
     current_best_->to(config_->device);
     train_target_->to(config_->device);
   }
@@ -49,6 +51,7 @@ class Train {
   std::atomic<int> current_game_playing_ = 0;
 
   Config* config_;
+  ServerContext* server_context_;
 
   std::chrono::time_point<std::chrono::high_resolution_clock> exp_gen_start_;
 };

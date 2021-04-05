@@ -1,5 +1,7 @@
 #include "test_utils.h"
 
+#include "nn/nn_util.h"
+
 #include <fmt/core.h>
 
 namespace chess {
@@ -54,5 +56,15 @@ Board BoardFromNotation(std::string_view notation) {
   }
   return board;
 }
+
+std::unique_ptr<Experience> CreateExperience(
+    std::unique_ptr<GameState> state, std::vector<std::pair<Move, float>> move,
+    float reward) {
+  auto policy = MoveToTensor(move).unsqueeze(0).flatten(1);
+
+  return std::make_unique<Experience>(std::move(state), policy, reward);
+}
+
+
 }  // namespace chess
 

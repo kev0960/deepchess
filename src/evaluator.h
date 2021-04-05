@@ -8,6 +8,7 @@
 #include "config.h"
 #include "game_state.h"
 #include "nn/chess_nn.h"
+#include "worker_manager.h"
 
 namespace chess {
 
@@ -27,10 +28,12 @@ struct EvaluatorWorkerInfo {
 
 class Evaluator {
  public:
-  Evaluator(ChessNN chess_net, const Config* config)
+  Evaluator(ChessNN chess_net, const Config* config,
+            WorkerManager* worker_manager)
       : chess_net_(chess_net),
         config_(config),
-        worker_info_(config_->num_threads) {}
+        worker_info_(config_->num_threads),
+        worker_manager_(worker_manager) {}
 
   virtual float Evalulate(const GameState& board);
   virtual std::vector<float> EvalulateBatch(
@@ -42,7 +45,7 @@ class Evaluator {
   virtual std::vector<float> EvaluateAsyncBatch(
       const std::vector<const GameState*>& states, int worker_id);
 
-  void InferenceWorker();
+  void InferenceWorker(int worker_id);
   void StartInferenceWorker();
 
   // Join inference worker.
@@ -60,6 +63,8 @@ class Evaluator {
 
   bool should_finish_inference_ = false;
   std::vector<std::thread> inference_workers_;
+
+  WorkerManager* worker_manager_;
 };
 
 }  // namespace chess
