@@ -58,60 +58,45 @@ void SetPieceOnTensor(const Board& board, PieceSide me, int n_th,
   }
 }
 
-void SetRepititionsOnTensor(const GameState& game_state, int n_th,
-                            torch::Tensor* tensor) {
-  if (game_state.RepititionCount() >= 2) {
+void SetRepititionsOnTensor(int rep_count, int n_th, torch::Tensor* tensor) {
+  if (rep_count >= 2) {
     tensor->index_put_({kNumFeaturesPerHistory * n_th + 12}, 1);
   }
 
-  if (game_state.RepititionCount() >= 3) {
+  if (rep_count >= 3) {
     tensor->index_put_({kNumFeaturesPerHistory * n_th + 13}, 1);
   }
 }
 
-void SetCastling(const GameState& game_state, PieceSide side,
-                 torch::Tensor* tensor) {
-  std::pair<bool, bool> castling;
-  if (side == PieceSide::BLACK) {
-    castling = game_state.CanBlackCastle();
-  } else {
-    castling = game_state.CanWhiteCastle();
-  }
-
+void SetCastling(std::pair<bool, bool> p1_castle,
+                 std::pair<bool, bool> p2_castle, torch::Tensor* tensor) {
   // Set P1 Castling.
-  if (castling.first) {
+  if (p1_castle.first) {
     tensor->index_put_({kNumFeaturesPerHistory * kNumMaxHistory + 2}, 1);
   }
-  if (castling.second) {
+  if (p1_castle.second) {
     tensor->index_put_({kNumFeaturesPerHistory * kNumMaxHistory + 3}, 1);
   }
 
-  if (side == PieceSide::BLACK) {
-    castling = game_state.CanWhiteCastle();
-  } else {
-    castling = game_state.CanBlackCastle();
-  }
-
   // Set P2 Castling.
-  if (castling.first) {
+  if (p2_castle.first) {
     tensor->index_put_({kNumFeaturesPerHistory * kNumMaxHistory + 4}, 1);
   }
-  if (castling.second) {
+  if (p2_castle.second) {
     tensor->index_put_({kNumFeaturesPerHistory * kNumMaxHistory + 5}, 1);
   }
 }
 
-void SetAuxiliaryData(const GameState& game_state, PieceSide side,
-                      torch::Tensor* tensor) {
+void SetAuxiliaryData(int total_move_count, int no_progress_count,
+                      PieceSide side, torch::Tensor* tensor) {
   if (side == PieceSide::BLACK) {
     tensor->index_put_({kNumFeaturesPerHistory * kNumMaxHistory}, 1);
   }
 
   tensor->index_put_({kNumFeaturesPerHistory * kNumMaxHistory + 1},
-                     game_state.TotalMoveCount());
-  SetCastling(game_state, side, tensor);
+                     total_move_count);
   tensor->index_put_({kNumFeaturesPerHistory * kNumMaxHistory + 6},
-                     game_state.NoProgressCount());
+                     no_progress_count);
 }
 
 int ComputeTensorSize(c10::IntArrayRef ref) {
@@ -197,7 +182,7 @@ torch::Tensor GameStateToTensor(const GameState& current_state) {
   while (current) {
     SetPieceOnTensor(current->GetBoard(), current_state.WhoIsMoving(), n_th,
                      &tensor);
-    SetRepititionsOnTensor(*current, n_th, &tensor);
+    SetRepititionsOnTensor(current->RepititionCount(), n_th, &tensor);
 
     n_th++;
     if (n_th >= kNumMaxHistory) {
@@ -207,7 +192,42 @@ torch::Tensor GameStateToTensor(const GameState& current_state) {
     current = current->PrevState();
   }
 
-  SetAuxiliaryData(current_state, current_state.WhoIsMoving(), &tensor);
+  std::pair<bool, bool> p1_castle;
+  std::pair<bool, bool> p2_castle;
+
+  if (current_state.WhoIsMoving() == PieceSide::BLACK) {
+    p1_castle = current_state.CanBlackCastle();
+    p2_castle = current_state.CanWhiteCastle();
+  } else {
+    p1_castle = current_state.CanWhiteCastle();
+    p2_castle = current_state.CanBlackCastle();
+  }
+
+  SetAuxiliaryData(current_state.TotalMoveCount(),
+                   current_state.NoProgressCount(), current_state.WhoIsMoving(),
+                   &tensor);
+  SetCastling(p1_castle, p2_castle, &tensor);
+
+  return tensor;
+}
+
+torch::Tensor GameStateSerializedToTensor(
+    const GameStateSerialized& serialized) {
+  torch::Tensor tensor = torch::zeros({kTotalNumFeatures, 8, 8});
+
+  int n_th = 0;
+  PieceSide current_moving = serialized.who_is_moving;
+  while (n_th < serialized.num_history) {
+    SetPieceOnTensor(serialized.board_history[n_th].first, current_moving, n_th,
+                     &tensor);
+    SetRepititionsOnTensor(serialized.board_history[n_th].second, n_th,
+                           &tensor);
+    n_th++;
+  }
+
+  SetAuxiliaryData(serialized.total_move_count, serialized.no_progress_count,
+                   serialized.who_is_moving, &tensor);
+  SetCastling(serialized.p1_castle, serialized.p2_castle, &tensor);
 
   return tensor;
 }

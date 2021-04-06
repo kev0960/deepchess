@@ -11,8 +11,8 @@ namespace chess {
 class Train {
  public:
   Train(Config* config, ServerContext* server_context)
-      : current_best_(config->num_layer),
-        train_target_(config->num_layer),
+      : current_best_(config->num_layer, config->num_filter),
+        train_target_(config->num_layer, config->num_filter),
         config_(config),
         server_context_(server_context) {
     current_best_->to(config_->device);

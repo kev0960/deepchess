@@ -31,6 +31,7 @@ Config::Config(std::string file_name) {
   DEFINE_CONFIG(num_threads, int);
   DEFINE_CONFIG(num_layer, int);
   DEFINE_CONFIG(num_epoch, int);
+  DEFINE_CONFIG(num_filter, int);
   DEFINE_CONFIG(total_game_play_for_testing, int);
   DEFINE_CONFIG(current_best_target_score, float);
   DEFINE_CONFIG(max_game_moves_until_draw, int);
@@ -44,6 +45,7 @@ Config::Config(std::string file_name) {
   DEFINE_CONFIG(learning_rate, float);
   DEFINE_CONFIG(weight_decay, float);
   DEFINE_CONFIG(existing_model_name, std::string);
+  DEFINE_CONFIG(exp_save_file_name, std::string);
   DEFINE_CONFIG(dirichlet_noise, float);
   DEFINE_CONFIG(show_self_play_boards, bool);
   DEFINE_CONFIG(use_async_inference, bool);

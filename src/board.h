@@ -24,7 +24,6 @@ class Board {
   // Create an empty board.
   Board();
 
-  Board(const Board& board) : board_(board.board_) {}
   Board(const std::vector<PiecesOnBoard>& pieces);
 
   // Get list of possible moves.

@@ -7,7 +7,7 @@ namespace chess {
 
 class ChessNNImpl : public torch::nn::Module {
  public:
-  ChessNNImpl(int num_layer);
+  ChessNNImpl(int num_layer, int num_filter);
 
   virtual torch::Tensor GetPolicy(torch::Tensor state);
   virtual torch::Tensor GetValue(torch::Tensor state);

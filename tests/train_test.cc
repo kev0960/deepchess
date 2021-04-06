@@ -58,7 +58,7 @@ TEST(TrainTest, AgentPlayTest) {
   ServerContext server_context(&config);
   Train trainer(&config, &server_context);
 
-  ChessNN nn(10);
+  ChessNN nn(10, 10);
   nn->to(config.device);
 
   Evaluator target_eval(nn, &config, /*worker_manager=*/nullptr);

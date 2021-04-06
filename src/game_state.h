@@ -6,6 +6,19 @@
 
 namespace chess {
 
+struct GameStateSerialized {
+  std::array<std::pair<Board, /*repetition_count=*/int>, 8> board_history;
+  int num_history = 0;
+
+  PieceSide who_is_moving;
+  int total_move_count;
+  int no_progress_count;
+
+  // Castling availability of O-O and O-O-O.
+  std::pair<bool, bool> p1_castle;
+  std::pair<bool, bool> p2_castle;
+};
+
 struct CastlingAvail {
   bool king_side_rook_moved = false;
   bool queen_side_rook_moved = false;
@@ -43,6 +56,8 @@ class GameState {
   std::vector<Move> GetLegalMoves() const;
 
   bool IsDraw() const;
+
+  GameStateSerialized GetGameStateSerialized() const;
 
  private:
   // Should be only used by factory.

@@ -350,7 +350,7 @@ TEST(ChessNNTest, BenchmarkTime) {
 
 TEST(ChessNNTest, BenchmarkBatchTime) {
   torch::Device device(torch::kCUDA);
-  ChessNN model(10);
+  ChessNN model(10, 10);
   model->to(device);
 
   GameStateBuilder builder;
@@ -382,7 +382,7 @@ TEST(ChessNNTest, BenchmarkBatchTime) {
 
 TEST(ChessNNTest, InferenceTime) {
   torch::Device device(torch::kCUDA);
-  ChessNN model(10);
+  ChessNN model(10, 10);
   model->to(device);
 
   auto start = std::chrono::high_resolution_clock::now();
@@ -400,7 +400,7 @@ TEST(ChessNNTest, InferenceTime) {
 }
 
 TEST(ChessNNTest, ChessNN) {
-  ChessNN model(152);
+  ChessNN model(152, 10);
 
   torch::Device device(torch::kCUDA);
   model->to(device);
@@ -448,8 +448,30 @@ TEST(ChessNNTest, NormalizePolicy) {
       0, 0.05, 0, 0, 0, 0, 0.05, 0   // 1
   };
 
-  EXPECT_TRUE(normalized.index({56}).allclose(torch::from_blob(knight, {8, 8})));
-  EXPECT_TRUE(normalized.index({57}).allclose(torch::from_blob(knight, {8, 8})));
+  EXPECT_TRUE(
+      normalized.index({56}).allclose(torch::from_blob(knight, {8, 8})));
+  EXPECT_TRUE(
+      normalized.index({57}).allclose(torch::from_blob(knight, {8, 8})));
+}
+
+TEST(ChessNNTest, SerializeTest) {
+  GameStateBuilder builder;
+
+  builder
+      .DoMove(Move(7, 1, 5, 2))  // Nb3
+      .DoMove(Move(0, 1, 2, 2))  // Nc6
+      .DoMove(Move(6, 1, 4, 1))
+      .DoMove(Move(1, 1, 3, 1));
+
+  auto& states = builder.GetStates();
+
+  torch::Tensor tensor = GameStateToTensor(*states.back());
+
+  auto serialized = states.back()->GetGameStateSerialized();
+  torch::Tensor tensor_from_serialized =
+      GameStateSerializedToTensor(serialized);
+
+  EXPECT_TRUE(tensor.allclose(tensor_from_serialized));
 }
 
 }  // namespace

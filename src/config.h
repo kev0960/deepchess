@@ -20,6 +20,9 @@ class Config {
   // # of layers in the ChessNN.
   int num_layer = 10;
 
+  // # of filters in ChessNN.
+  int num_filter = 128;
+
   // Total number of entire training iteration.
   int num_epoch = 1;
 
@@ -81,6 +84,9 @@ class Config {
   
   // Model name to import.
   std::string existing_model_name = "";
+
+  // Experience Save file.
+  std::string exp_save_file_name = "";
 
   // Whether to use CUDA.
   bool use_cuda = true;

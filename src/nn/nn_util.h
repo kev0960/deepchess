@@ -12,6 +12,8 @@ namespace chess {
 
 // Convert board to tensor.
 torch::Tensor GameStateToTensor(const GameState& current_state);
+torch::Tensor GameStateSerializedToTensor(
+    const GameStateSerialized& serialized);
 
 // Convert (move, probability) pair to the policy tensor.
 torch::Tensor MoveToTensor(std::vector<std::pair<Move, float>> move_and_prob);

@@ -16,7 +16,7 @@ TEST_F(MCTSTest, CheckMoves) {
   config.max_game_moves_until_draw = 10;
   config.current_best_target_score = 10;
 
-  ChessNN nn(10);
+  ChessNN nn(10, 10);
   nn->to(config.device);
 
   Evaluator eval(nn, &config, /*worker_manager=*/nullptr);
@@ -45,7 +45,7 @@ TEST_F(MCTSTest, AsyncEval) {
   config.current_best_target_score = 10;
   config.use_async_inference = true;
 
-  ChessNN nn(10);
+  ChessNN nn(10, 10);
   nn->to(config.device);
 
   Evaluator eval(nn, &config, /*worker_manager=*/nullptr);
@@ -80,7 +80,7 @@ TEST_F(MCTSTest, BatchMCTSNotAsync) {
   config.current_best_target_score = 10;
   config.use_async_inference = false;
 
-  ChessNN nn(10);
+  ChessNN nn(10, 10);
   nn->to(config.device);
 
   Evaluator eval(nn, &config, /*worker_manager=*/nullptr);
@@ -117,7 +117,7 @@ TEST_F(MCTSTest, BatchMCTSAsync) {
   config.mcts_virtual_loss= -0.05;
   config.precompute_batch_parent_min_visit_count = 600;
 
-  ChessNN nn(10);
+  ChessNN nn(10, 10);
   nn->to(config.device);
 
   Evaluator eval(nn, &config, /*worker_manager=*/nullptr);

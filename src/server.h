@@ -19,7 +19,7 @@ class Server {
  public:
   Server(Config* config, ServerContext* server_context)
       : config_(config),
-        chess_nn_(config->num_layer),
+        chess_nn_(config->num_layer, config->num_filter),
         server_context_(server_context) {
     chess_nn_->to(config_->device);
   }

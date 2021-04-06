@@ -342,5 +342,35 @@ bool GameState::IsDraw() const {
   return false;
 }
 
+GameStateSerialized GameState::GetGameStateSerialized() const {
+  GameStateSerialized seralized;
+
+  seralized.who_is_moving = who_is_moving_;
+  seralized.total_move_count = total_move_;
+  seralized.no_progress_count = no_progress_count_;
+
+  if (who_is_moving_ == PieceSide::BLACK) {
+    seralized.p1_castle = CanBlackCastle();
+    seralized.p2_castle = CanWhiteCastle();
+  } else {
+    seralized.p1_castle = CanWhiteCastle();
+    seralized.p2_castle = CanBlackCastle();
+  }
+
+  const GameState* current = this;
+
+  int i = 0;
+  while (current && i < 8) {
+    seralized.board_history[i].first = current->GetBoard();
+    seralized.board_history[i].second = current->RepititionCount();
+
+    i++;
+    current = current->PrevState();
+  }
+
+  seralized.num_history = i;
+  return seralized;
+}
+
 }  // namespace chess
 

@@ -4,12 +4,11 @@ namespace chess {
 
 // Number of 8*8 planes in the input state.
 constexpr int kStateSize = 119;
-constexpr int kNumFilters = 50;
 
-ChessNNImpl::ChessNNImpl(int num_layer) {
+ChessNNImpl::ChessNNImpl(int num_layer, int num_filter) {
   conv_input_to_block_ = register_module(
       "conv_input_to_block",
-      torch::nn::Conv2d(torch::nn::Conv2dOptions(kStateSize, kNumFilters, 3)
+      torch::nn::Conv2d(torch::nn::Conv2dOptions(kStateSize, num_filter, 3)
                             .stride(1)
                             .padding(1)));
 
@@ -17,14 +16,14 @@ ChessNNImpl::ChessNNImpl(int num_layer) {
 
   for (int i = 0; i < num_layer; i++) {
     layers_->push_back(register_module("nn_block_" + std::to_string(i),
-                                       ChessNNBlock(kNumFilters)));
+                                       ChessNNBlock(num_filter)));
   }
 
   register_module("chess_net", layers_);
 
   conv_policy_ = register_module(
       "conv_policy",
-      torch::nn::Conv2d(torch::nn::Conv2dOptions(kNumFilters, 73, {3, 3})
+      torch::nn::Conv2d(torch::nn::Conv2dOptions(num_filter, 73, {3, 3})
                             .stride(1)
                             .padding(1)));
   fc_policy_ =
@@ -32,7 +31,7 @@ ChessNNImpl::ChessNNImpl(int num_layer) {
 
   conv_value_ = register_module(
       "conv_value",
-      torch::nn::Conv2d(torch::nn::Conv2dOptions(kNumFilters, 32, {3, 3})
+      torch::nn::Conv2d(torch::nn::Conv2dOptions(num_filter, 32, {3, 3})
                             .stride(1)
                             .padding(1)));
 
