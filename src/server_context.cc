@@ -33,4 +33,9 @@ ServerContext::GetGames() {
   return games_;
 }
 
+void ServerContext::DeleteRecordedGames() {
+  std::lock_guard lk(m_game_);
+  games_.clear();
+}
+
 }  // namespace chess

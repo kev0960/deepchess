@@ -100,6 +100,10 @@ Move Agent::GetBestMove(const GameState& game_state) const {
   MCTS mcts(&game_state, evaluator_, dist_, config_, worker_id_);
   mcts.RunMCTS();
 
+  if (config_->move_debug_output) {
+    mcts.DumpDebugInfo();
+  }
+
   return mcts.MoveToMake(/*choose_best_move=*/true);
 }
 

@@ -11,12 +11,14 @@
         ></WorkerInfo>
       </div>
     </div>
+    <RecordedGames></RecordedGames>
   </div>
 </template>
 
 <script>
 import Chessboard from "./components/Chessboard.vue";
 import WorkerInfo from "./components/WorkerInfo.vue";
+import RecordedGames from "./components/RecordedGames.vue";
 
 export default {
   components: {

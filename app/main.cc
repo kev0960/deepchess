@@ -23,14 +23,15 @@ int main() {
 
   /*
   chess::Chess game(&config);
-  chess::ChessNN chess_nn(15);
+  chess::ChessNN chess_nn(config.num_layer, config.num_filter);
   chess_nn->to(config.device);
 
   chess::UniformDistribution dist;
-  chess::Evaluator eval(chess_nn, &config);
+  chess::Evaluator eval(chess_nn, &config, server_context.GetWorkerManager());
   eval.StartInferenceWorker();
 
-  chess::Agent agent(&dist, &config, &eval, 0);
+  chess::Agent agent(&dist, &config, &eval, server_context.GetWorkerManager(),
+                     0);
   auto result = game.PlayChessWithHuman(&agent, chess::WHITE);
   switch (result) {
     case chess::DRAW:

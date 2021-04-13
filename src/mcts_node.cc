@@ -62,12 +62,11 @@ float MCTSNode::Prior() const { return prior_; }
 void MCTSNode::DumpDebugInfo() const {
   if (n_s_a_ != 0) {
     fmt::print(
-        "W(s,a)=[{}] N(s,a)=[{}] Q(s,a)=[{}] Value=[{}] Prior=[{}] "
-        "Computed=[{}]\n",
-        w_s_a_, n_s_a_, w_s_a_ / n_s_a_, v_, prior_, computed_);
+        "W(s,a)=[{}] N(s,a)=[{}] Q(s,a)=[{}] Value=[{}] Prior=[{}]\n",
+        w_s_a_, n_s_a_, w_s_a_ / n_s_a_, v_, prior_);
   } else {
-    fmt::print("W(s,a)=[{}] N(s,a)=[{}] Value=[{}] Prior=[{}] Computed=[{}]\n",
-               w_s_a_, n_s_a_, v_, prior_, computed_);
+    fmt::print("W(s,a)=[{}] N(s,a)=[{}] Value=[{}] Prior=[{}] \n",
+               w_s_a_, n_s_a_, v_, prior_);
   }
 }
 

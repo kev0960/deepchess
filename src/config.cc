@@ -48,6 +48,7 @@ Config::Config(std::string file_name) {
   DEFINE_CONFIG(exp_save_file_name, std::string);
   DEFINE_CONFIG(dirichlet_noise, float);
   DEFINE_CONFIG(show_self_play_boards, bool);
+  DEFINE_CONFIG(move_debug_output, bool);
   DEFINE_CONFIG(use_async_inference, bool);
   DEFINE_CONFIG(precompute_batch_parent_min_visit_count, int);
   DEFINE_CONFIG(evaluator_worker_count, int);

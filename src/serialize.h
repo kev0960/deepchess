@@ -1,17 +1,27 @@
 #ifndef SERIALIZE_H
 #define SERIALIZE_H
 
+#include <fstream>
+
 #include "agent.h"
 #include "config.h"
-#include <fstream>
 
 namespace chess {
 
+struct ExperienceSerialized {
+  GameStateSerialized game_state;
+  std::array<float, 73 * 8 * 8> policy_vec;
+  float result;
+};
+
+// Save the generated experiences.
 class ExperienceSaver {
  public:
   ExperienceSaver(Config* config);
 
   void SaveExperiences(const std::vector<std::unique_ptr<Experience>>& exps);
+  std::vector<std::unique_ptr<ExperienceSerialized>> DeserializeExperiences(
+      const std::string& file_name);
 
  private:
   Config* config_;

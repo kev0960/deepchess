@@ -316,10 +316,17 @@ torch::Tensor MCTS::GetPolicyVector() const {
 Move MCTS::MoveToMake(bool choose_best_move) const {
   if (choose_best_move) {
     std::optional<Move> best_move;
+
     int max_visit = 0;
+    float max_value = -1000;
 
     for (const auto& [child_node, move] : root_->Children()) {
-      if (child_node->Visit() > max_visit) {
+      if (child_node->Visit() == max_visit) {
+        if (child_node->Q() >= max_value) {
+          best_move = move;
+          max_value = child_node->Q();
+        }
+      } else if (child_node->Visit() > max_visit) {
         max_visit = child_node->Visit();
         best_move = move;
       }
@@ -380,16 +387,33 @@ void MCTS::DumpDebugInfo(MCTSNode* node, int depth) const {
     return;
   }
 
+  for (int i = 0; i < depth - 1; i++) {
+    fmt::print(" ");
+  }
+
   if (node == root_) {
-    fmt::print("{:02} Root {} ----\n", depth, node->Q());
+    fmt::print("{:02} Root {} ", depth, node->Q());
   } else {
-    fmt::print("{:02} {} {}  ----\n", depth, node->State().LastMove().Str(),
+    fmt::print("{:02} {} {} ", depth, node->State().LastMove().Str(),
                node->Q());
   }
 
   node->DumpDebugInfo();
   for (const auto& n : node->Children()) {
     DumpDebugInfo(n.first, depth + 1);
+  }
+
+  // Best moves.
+  if (node == root_) {
+    std::vector<std::pair<MCTSNode*, Move>> children = root_->Children();
+    if (children.empty()) {
+      return;
+    }
+
+    for (auto [node, m] : children) {
+      fmt::print("{} : ", m.Str());
+      node->DumpDebugInfo();
+    }
   }
 }
 

@@ -71,6 +71,9 @@ class Config {
   // Show boards of every move in the self-play.
   bool show_self_play_boards = true;
 
+  // Show debug output of moves.
+  bool move_debug_output = false;
+
   // Use the Async version of Inference evaluator.
   bool use_async_inference = false;
 

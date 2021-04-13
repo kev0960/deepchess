@@ -19,6 +19,8 @@ class ServerContext {
   WorkerManager* GetWorkerManager() { return &worker_manager_; }
 
   void RecordGame(const std::vector<std::unique_ptr<Experience>>& experiences);
+  void DeleteRecordedGames();
+
   std::vector<std::pair<GameResult, std::vector<Move>>> GetGames();
 
  private:

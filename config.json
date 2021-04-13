@@ -1,21 +1,23 @@
 {
   "num_epoch" : 4,
-  "num_layer" : 15,
+  "num_layer" : 10,
   "num_threads" : 15,
   "num_self_play_game" : 1000,
   "do_batch_mcts" : true,
   "total_game_play_for_testing" : 64,
   "current_best_target_score" : 64,
-  "train_batch_size" : 128,
+  "train_batch_size" : 256,
   "mcts_inference_batch_size" : 64,
   "mcts_batch_leaf_node_size" : 16,
   "max_game_moves_until_draw" : 300,
-  "learning_rate" : 0.004,
+  "mcts_virtual_loss": -0.01,
+  "learning_rate" : 0.005,
   "num_mcts_iteration" : 600,
   "evaluator_worker_count" : 1,
   "existing_model_name" : "CurrentBest.pt",
   "show_self_play_boards" : false,
   "use_async_inference" : true,
   "precompute_batch_parent_min_visit_count" : 3,
-  "run_server" : true
+  "run_server" : true,
+  "move_debug_output" : false 
 }

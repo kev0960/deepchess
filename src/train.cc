@@ -100,6 +100,9 @@ void Train::DoTrain() {
 
     total_exp_ = 0;
     total_exp_done_ = 0;
+
+    server_context_->GetWorkerManager()->ResetWorkerInfo();
+    server_context_->DeleteRecordedGames();
   }
 }
 
@@ -181,7 +184,7 @@ void Train::TrainNN() {
 
     torch::Tensor policy_loss =
         -torch::dot(torch::log(target_policy).clamp(-1000), input_policy);
-    torch::Tensor value_loss = torch::norm(input_values - target_values);
+    torch::Tensor value_loss = torch::norm(input_values - target_values) * 100;
 
     torch::Tensor total_loss = policy_loss + value_loss;
 
@@ -190,7 +193,6 @@ void Train::TrainNN() {
 
     done += batch.size();
 
-    // std::cout << input_policy << std::endl;
     fmt::print("Loss[{}/{}] : total({}) policy({}) value({}) \n", done, total,
                total_loss.item<float>(), policy_loss.item<float>(),
                value_loss.item<float>());
