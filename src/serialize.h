@@ -19,9 +19,8 @@ class ExperienceSaver {
  public:
   ExperienceSaver(Config* config);
 
+  void ClearSavedExperiences();
   void SaveExperiences(const std::vector<std::unique_ptr<Experience>>& exps);
-  std::vector<std::unique_ptr<ExperienceSerialized>> DeserializeExperiences(
-      const std::string& file_name);
 
  private:
   Config* config_;
@@ -29,6 +28,9 @@ class ExperienceSaver {
   std::mutex m_out_file_;
   std::ofstream out_file_;
 };
+
+std::vector<std::unique_ptr<ExperienceSerialized>> DeserializeExperiences(
+    const std::string& file_name);
 
 }  // namespace chess
 

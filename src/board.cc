@@ -282,9 +282,7 @@ Board Board::DoMove(Move m) const {
       std::abs(m.ToCoord().second - m.FromCoord().second) == 1) {
     if (PieceAt(m.ToCoord()).Type() == PieceType::EMPTY) {
       // Capture the passed pawn.
-      next.PutPieceAt(
-          m.ToCoord().first - (m.ToCoord().first - m.FromCoord().second),
-          m.ToCoord().second, Piece(" "));
+      next.PutPieceAt(m.FromCoord().first, m.ToCoord().second, Piece(" "));
     }
   }
 

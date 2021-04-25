@@ -98,6 +98,9 @@ class Config {
   // Should run the server.
   bool run_server = false;
 
+  // Should do train.
+  bool do_train = true;
+
   // Server port.
   std::string server_port = "8888";
 

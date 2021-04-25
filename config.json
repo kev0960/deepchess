@@ -19,5 +19,6 @@
   "use_async_inference" : true,
   "precompute_batch_parent_min_visit_count" : 3,
   "run_server" : true,
-  "move_debug_output" : false 
+  "move_debug_output" : true,
+  "do_train" : false
 }

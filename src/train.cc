@@ -93,7 +93,9 @@ void Train::DoTrain() {
       // serialization & deserialization.
       torch::save(train_target_, model_name);
       torch::load(current_best_, model_name);
+
       experiences_.clear();
+      experience_saver_.ClearSavedExperiences();
     } else {
       ShuffleVector(experiences_);
     }
@@ -125,6 +127,9 @@ void Train::GenerateExperience(Evaluator* evaluator, int worker_id) {
     int done = total_exp_done_.fetch_add(1) + 1;
     fmt::print("Done : {}/{}, Average {} seconds per game \n", done,
                config_->num_self_play_game, took_sec.count() / (float)done);
+
+    // Save the experiences.
+    experience_saver_.SaveExperiences(experiences);
 
     exp_guard_.lock();
     experiences_.insert(experiences_.end(),

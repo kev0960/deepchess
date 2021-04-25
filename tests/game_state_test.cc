@@ -173,6 +173,20 @@ P.P.....
 
   auto moves = builder.GetStates().back()->GetLegalMoves();
   EXPECT_THAT(moves, IsSupersetOf({Move(3, 0, 2, 1), Move(3, 2, 2, 1)}));
+
+  builder.DoMove(Move(3, 0, 2, 1));
+
+  std::string expected = R"(r...k.r.
+........
+.P......
+..P.....
+........
+........
+......P.
+.R..K..R
+)";
+
+  EXPECT_EQ(builder.GetStates().back()->GetBoard().PrintBoard('.'), expected);
 }
 
 TEST(GameStateTest, EnPassantBlack) {
@@ -192,6 +206,20 @@ P.P.....
 
   auto moves = builder.GetStates().back()->GetLegalMoves();
   EXPECT_THAT(moves, IsSupersetOf({Move(4, 6, 5, 7)}));
+
+  builder.DoMove(Move(4, 6, 5, 7));
+
+  std::string expected = R"(r...k.r.
+.p......
+........
+P.P.....
+........
+.......p
+........
+.R..K..R
+)";
+
+  EXPECT_EQ(builder.GetStates().back()->GetBoard().PrintBoard('.'), expected);
 }
 
 TEST(GameStateTest, Stalemate) {

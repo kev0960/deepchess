@@ -4,6 +4,7 @@
 #include "agent.h"
 #include "config.h"
 #include "nn/chess_nn.h"
+#include "serialize.h"
 #include "server_context.h"
 
 namespace chess {
@@ -14,7 +15,8 @@ class Train {
       : current_best_(config->num_layer, config->num_filter),
         train_target_(config->num_layer, config->num_filter),
         config_(config),
-        server_context_(server_context) {
+        server_context_(server_context),
+        experience_saver_(config) {
     current_best_->to(config_->device);
     train_target_->to(config_->device);
   }
@@ -54,6 +56,7 @@ class Train {
   ServerContext* server_context_;
 
   std::chrono::time_point<std::chrono::high_resolution_clock> exp_gen_start_;
+  ExperienceSaver experience_saver_;
 };
 
 }  // namespace chess
